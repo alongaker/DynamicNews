@@ -217,7 +217,7 @@ header{
 .settings-overlay.open{ display:flex; }
 
 .settings-panel{
-  width:520px;
+  width:620px;
   max-height:80vh;
   background:var(--panel);
   border:1px solid var(--hairline);
@@ -246,13 +246,71 @@ header{
 }
 .settings-row{
   display:flex;
-  align-items:center;
+  align-items:flex-start;
   justify-content:space-between;
-  padding:12px 0;
+  gap:12px;
+  padding:14px 0;
   border-bottom:1px solid var(--hairline);
 }
+.settings-row .row-main{
+  flex:1;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.settings-row .row-top{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.settings-row .hold-toggle{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:12px;
+  color:var(--text-dim);
+  cursor:pointer;
+  user-select:none;
+  white-space:nowrap;
+}
+.settings-row .hold-toggle input{
+  accent-color:var(--amber);
+  width:15px;
+  height:15px;
+  cursor:pointer;
+}
+.settings-row .info{ min-width:0; }
 .settings-row .info .t{ font-weight:600; font-size:15px; }
 .settings-row .info .n{ font-size:12px; color:var(--text-dim); font-family:'Barlow Condensed', sans-serif; }
+.settings-row .holding-fields{
+  display:none;
+  gap:8px;
+  flex-wrap:wrap;
+  padding-left:23px;
+}
+.settings-row .holding-fields.open{ display:flex; }
+.settings-row .holding-fields label{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  font-size:10px;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  color:var(--text-dim);
+}
+.settings-row .holding-fields input{
+  width:110px;
+  background:var(--bg);
+  border:1px solid var(--hairline);
+  color:var(--text);
+  font-family:'IBM Plex Mono', monospace;
+  font-size:13px;
+  padding:8px 10px;
+  border-radius:5px;
+  outline:none;
+}
+.settings-row .holding-fields input:focus{ border-color:var(--amber); }
 .settings-row .remove-btn{
   background:none;
   border:1px solid var(--hairline);
@@ -262,6 +320,8 @@ header{
   cursor:pointer;
   font-size:14px;
   line-height:1;
+  flex:0 0 auto;
+  margin-top:2px;
 }
 .settings-row .remove-btn:hover{ border-color:var(--down); }
 
@@ -342,6 +402,41 @@ main{
   justify-content:center;
   position:relative;
   overflow:hidden;
+}
+.spotlight-stage{
+  flex:1;
+  min-height:0;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+.spotlight-panel{
+  flex:1;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  will-change: transform, opacity;
+}
+.spotlight-panel.slide-out{
+  animation: spotlight-slide-out 0.42s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.spotlight-panel.slide-in{
+  animation: spotlight-slide-in 0.48s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes spotlight-slide-out{
+  from{ transform:translateX(0); opacity:1; }
+  to{ transform:translateX(-24%); opacity:0; }
+}
+@keyframes spotlight-slide-in{
+  from{ transform:translateX(28%); opacity:0; }
+  to{ transform:translateX(0); opacity:1; }
+}
+@media (prefers-reduced-motion: reduce){
+  .spotlight-panel.slide-out,
+  .spotlight-panel.slide-in{
+    animation:none;
+  }
 }
 .spotlight-eyebrow{
   font-size:12px;
@@ -534,6 +629,26 @@ main{
   white-space:nowrap;
   padding-right:12px;
 }
+.wl-row .n .hold-badge{
+  display:inline-block;
+  margin-left:8px;
+  font-family:'IBM Plex Mono', monospace;
+  font-size:10px;
+  letter-spacing:1px;
+  color:var(--amber);
+  border:1px solid rgba(242,169,59,0.35);
+  padding:1px 6px;
+  border-radius:999px;
+  vertical-align:middle;
+}
+.wl-row .pos{
+  grid-column: 2 / 5;
+  font-size:11px;
+  color:var(--text-dim);
+  margin-top:4px;
+}
+.wl-row .pos .pnl.up{ color:var(--up); }
+.wl-row .pos .pnl.down{ color:var(--down); }
 .wl-row .p{
   text-align:right;
   font-size:15px;
@@ -546,6 +661,17 @@ main{
 }
 .wl-row .c.up{ color:var(--up); }
 .wl-row .c.down{ color:var(--down); }
+.wl-row.has-position{
+  align-items:start;
+  padding-top:12px;
+  padding-bottom:12px;
+}
+.wl-row.has-position .t,
+.wl-row.has-position .n,
+.wl-row.has-position .p,
+.wl-row.has-position .c{
+  padding-top:2px;
+}
 
 /* ---------- news crawl ---------- */
 .crawl{
@@ -663,26 +789,30 @@ main{
 
   <main>
     <section class="spotlight">
-      <div class="spotlight-eyebrow">Spotlight</div>
-      <div class="spotlight-top">
-        <div class="spotlight-id">
-          <div class="ticker" id="spTicker">----</div>
-          <div class="name" id="spName">Loading&hellip;</div>
-        </div>
-        <div class="spotlight-price">
-          <div class="value" id="spPrice">$0.00</div>
-          <div class="delta" id="spDelta">+0.00 (0.00%)</div>
-        </div>
-      </div>
+      <div class="spotlight-stage">
+        <div class="spotlight-panel" id="spotlightPanel">
+          <div class="spotlight-eyebrow">Spotlight</div>
+          <div class="spotlight-top">
+            <div class="spotlight-id">
+              <div class="ticker" id="spTicker">----</div>
+              <div class="name" id="spName">Loading&hellip;</div>
+            </div>
+            <div class="spotlight-price">
+              <div class="value" id="spPrice">$0.00</div>
+              <div class="delta" id="spDelta">+0.00 (0.00%)</div>
+            </div>
+          </div>
 
-      <svg class="sparkline" id="spSpark" viewBox="0 0 600 120" preserveAspectRatio="none"></svg>
-      <div class="chart-label" id="chartLabel">1Y performance</div>
+          <svg class="sparkline" id="spSpark" viewBox="0 0 600 120" preserveAspectRatio="none"></svg>
+          <div class="chart-label" id="chartLabel">1Y performance</div>
 
-      <div class="spotlight-headline">
-        <span class="tag">Latest</span>
-        <ul class="headline-list" id="spHeadlineList">
-          <li><span class="headline-text">Fetching headlines&hellip;</span></li>
-        </ul>
+          <div class="spotlight-headline">
+            <span class="tag">Latest</span>
+            <ul class="headline-list" id="spHeadlineList">
+              <li><span class="headline-text">Fetching headlines&hellip;</span></li>
+            </ul>
+          </div>
+        </div>
       </div>
 
       <div class="rotation-dots" id="rotationDots"></div>
@@ -735,7 +865,7 @@ main{
       <input type="text" id="newName" class="name-input" placeholder="Company name" maxlength="30">
       <button id="addTickerBtn">Add</button>
     </div>
-    <div class="settings-hint">Live prices only work for real tickers once a data API is connected — otherwise a mock price is generated.</div>
+    <div class="settings-hint">Check <b>Holding</b> for positions you own, then enter shares and cost per share. Live prices need a connected data API — otherwise a mock price is generated.</div>
 
     <button class="settings-close" id="closeSettingsBtn">Done</button>
   </div>
@@ -772,19 +902,53 @@ CONFIG.API_KEY = (loadSavedApiKeys()[CONFIG.PROVIDER]) || "";
 
 const WATCHLIST_STORAGE_KEY = "marketboard_watchlist";
 
+function normalizeCompany(c){
+  const holding = (c && c.holding && typeof c.holding === "object") ? c.holding : {};
+  const shares = Number(holding.shares);
+  const costBasis = Number(holding.costBasis);
+  return {
+    ticker: String((c && c.ticker) || "").trim().toUpperCase(),
+    name: String((c && c.name) || (c && c.ticker) || "").trim().slice(0, 30),
+    holding: {
+      held: !!holding.held,
+      shares: (Number.isFinite(shares) && shares > 0) ? shares : null,
+      costBasis: (Number.isFinite(costBasis) && costBasis > 0) ? costBasis : null,
+    },
+  };
+}
+
+function isHeldPosition(c){
+  return !!(c && c.holding && c.holding.held);
+}
+
+function positionMetrics(company, price){
+  if (!isHeldPosition(company)) return null;
+  const shares = company.holding.shares;
+  const cost = company.holding.costBasis;
+  if (!(shares > 0) || !(cost > 0) || !isValidPrice(price)) return null;
+  const marketValue = shares * price;
+  const costValue = shares * cost;
+  const pnl = marketValue - costValue;
+  const pnlPct = (pnl / costValue) * 100;
+  return { shares, cost, marketValue, costValue, pnl, pnlPct };
+}
+
 // If a saved watchlist exists in this browser, use it instead of the default list above.
 (function loadSavedWatchlist(){
   try{
     const saved = JSON.parse(localStorage.getItem(WATCHLIST_STORAGE_KEY));
     if (Array.isArray(saved) && saved.length > 0){
-      CONFIG.COMPANIES = saved;
+      CONFIG.COMPANIES = saved.map(normalizeCompany).filter((c) => c.ticker);
+    } else {
+      CONFIG.COMPANIES = CONFIG.COMPANIES.map(normalizeCompany);
     }
   } catch(err){
-    // no valid saved list — stick with the default
+    CONFIG.COMPANIES = CONFIG.COMPANIES.map(normalizeCompany);
   }
 })();
 
 function saveWatchlist(){
+  CONFIG.COMPANIES = CONFIG.COMPANIES.map(normalizeCompany);
   localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(CONFIG.COMPANIES));
 }
 
@@ -1256,15 +1420,58 @@ function animateActiveDot(){
   requestAnimationFrame(() => { fill.style.width = "100%"; });
 }
 
-function rotateSpotlight(){
-  if (CONFIG.COMPANIES.length === 0) return;
-  spotlightIndex = (spotlightIndex + 1) % CONFIG.COMPANIES.length;
-  if (spotlightIndex === 0) renderRotationDots(); // reset dot trail on full loop
+let spotlightAnimating = false;
+
+function applySpotlightContent(){
   renderSpotlight();
   renderRotationDots();
   animateActiveDot();
   highlightActiveWatchlistRow();
   loadVisibleHistory();
+}
+
+function rotateSpotlight(){
+  if (CONFIG.COMPANIES.length === 0 || spotlightAnimating) return;
+
+  const advance = () => {
+    spotlightIndex = (spotlightIndex + 1) % CONFIG.COMPANIES.length;
+    if (spotlightIndex === 0) renderRotationDots(); // reset dot trail on full loop
+    applySpotlightContent();
+  };
+
+  if (prefersReducedMotion()){
+    advance();
+    return;
+  }
+
+  const panel = document.getElementById("spotlightPanel");
+  if (!panel){
+    advance();
+    return;
+  }
+
+  spotlightAnimating = true;
+  panel.classList.remove("slide-in");
+  panel.classList.add("slide-out");
+
+  const onOut = (e) => {
+    if (e.target !== panel) return;
+    panel.removeEventListener("animationend", onOut);
+    advance();
+    panel.classList.remove("slide-out");
+    // Force a reflow so slide-in always restarts cleanly.
+    void panel.offsetWidth;
+    panel.classList.add("slide-in");
+
+    const onIn = (e2) => {
+      if (e2.target !== panel) return;
+      panel.removeEventListener("animationend", onIn);
+      panel.classList.remove("slide-in");
+      spotlightAnimating = false;
+    };
+    panel.addEventListener("animationend", onIn);
+  };
+  panel.addEventListener("animationend", onOut);
 }
 
 /* ================================================================
@@ -1275,25 +1482,39 @@ function renderWatchlist(){
   const container = document.getElementById("watchlistRows");
   container.innerHTML = CONFIG.COMPANIES.map((c, i) => {
     const stock = stocks[c.ticker];
+    const held = isHeldPosition(c);
     const ready = isValidPrice(stock.price) && isValidPrice(stock.prevClose);
+    const pos = ready ? positionMetrics(c, stock.price) : null;
+    const holdBadge = held ? `<span class="hold-badge">HOLD</span>` : "";
+    const posLine = pos
+      ? `<div class="pos">${pos.shares} sh @ $${pos.cost.toFixed(2)}
+          <span class="pnl ${pos.pnl >= 0 ? "up" : "down"}">
+            ${pos.pnl >= 0 ? "+" : ""}$${Math.abs(pos.pnl).toFixed(2)}
+            (${pos.pnl >= 0 ? "+" : ""}${pos.pnlPct.toFixed(2)}%)
+          </span>
+        </div>`
+      : (held ? `<div class="pos">Add shares &amp; cost basis in Edit Watchlist</div>` : "");
+
     if (!ready){
       return `
-        <div class="wl-row ${i === spotlightIndex ? "active-row" : ""}" data-i="${i}">
+        <div class="wl-row ${held ? "has-position" : ""} ${i === spotlightIndex ? "active-row" : ""}" data-i="${i}">
           <div class="t">${c.ticker}</div>
-          <div class="n">${c.name}</div>
+          <div class="n">${escapeHtml(c.name)}${holdBadge}</div>
           <div class="p">—</div>
           <div class="c">…</div>
+          ${posLine}
         </div>`;
     }
     const change = stock.price - stock.prevClose;
     const pct = (change / stock.prevClose) * 100;
     const up = change >= 0;
     return `
-      <div class="wl-row ${i === spotlightIndex ? "active-row" : ""}" data-i="${i}">
+      <div class="wl-row ${held ? "has-position" : ""} ${i === spotlightIndex ? "active-row" : ""}" data-i="${i}">
         <div class="t">${c.ticker}</div>
-        <div class="n">${c.name}</div>
+        <div class="n">${escapeHtml(c.name)}${holdBadge}</div>
         <div class="p">$${stock.price.toFixed(2)}</div>
         <div class="c ${up ? "up" : "down"}">${up ? "+" : ""}${pct.toFixed(2)}%</div>
+        ${posLine}
       </div>`;
   }).join("");
 }
@@ -1459,19 +1680,70 @@ function renderSettingsList(){
     list.innerHTML = `<div class="settings-empty">No companies yet — add one below.</div>`;
     return;
   }
-  list.innerHTML = CONFIG.COMPANIES.map((c, i) => `
-    <div class="settings-row">
-      <div class="info">
-        <div class="t">${c.ticker}</div>
-        <div class="n">${c.name}</div>
+  list.innerHTML = CONFIG.COMPANIES.map((c, i) => {
+    const held = isHeldPosition(c);
+    const sharesVal = (c.holding && c.holding.shares != null) ? c.holding.shares : "";
+    const costVal = (c.holding && c.holding.costBasis != null) ? c.holding.costBasis : "";
+    return `
+    <div class="settings-row" data-i="${i}">
+      <div class="row-main">
+        <div class="row-top">
+          <label class="hold-toggle">
+            <input type="checkbox" class="hold-check" data-i="${i}" ${held ? "checked" : ""}>
+            Holding
+          </label>
+          <div class="info">
+            <div class="t">${escapeHtml(c.ticker)}</div>
+            <div class="n">${escapeHtml(c.name)}</div>
+          </div>
+        </div>
+        <div class="holding-fields ${held ? "open" : ""}" data-fields-i="${i}">
+          <label>Shares
+            <input type="number" min="0" step="any" class="hold-shares" data-i="${i}" value="${sharesVal}" placeholder="0">
+          </label>
+          <label>Cost / share
+            <input type="number" min="0" step="0.01" class="hold-cost" data-i="${i}" value="${costVal}" placeholder="0.00">
+          </label>
+        </div>
       </div>
       <button class="remove-btn" data-i="${i}" title="Remove">&times;</button>
-    </div>
-  `).join("");
+    </div>`;
+  }).join("");
 
   list.querySelectorAll(".remove-btn").forEach(btn => {
     btn.addEventListener("click", () => removeCompany(Number(btn.dataset.i)));
   });
+  list.querySelectorAll(".hold-check").forEach(box => {
+    box.addEventListener("change", () => {
+      const i = Number(box.dataset.i);
+      const company = CONFIG.COMPANIES[i];
+      if (!company.holding) company.holding = { held: false, shares: null, costBasis: null };
+      company.holding.held = box.checked;
+      const fields = list.querySelector(`[data-fields-i="${i}"]`);
+      if (fields) fields.classList.toggle("open", box.checked);
+      saveWatchlist();
+      renderWatchlist();
+    });
+  });
+  list.querySelectorAll(".hold-shares").forEach(input => {
+    input.addEventListener("change", () => updateHoldingField(Number(input.dataset.i), "shares", input.value));
+    input.addEventListener("blur", () => updateHoldingField(Number(input.dataset.i), "shares", input.value));
+  });
+  list.querySelectorAll(".hold-cost").forEach(input => {
+    input.addEventListener("change", () => updateHoldingField(Number(input.dataset.i), "costBasis", input.value));
+    input.addEventListener("blur", () => updateHoldingField(Number(input.dataset.i), "costBasis", input.value));
+  });
+}
+
+function updateHoldingField(index, field, raw){
+  const company = CONFIG.COMPANIES[index];
+  if (!company) return;
+  if (!company.holding) company.holding = { held: false, shares: null, costBasis: null };
+  const n = parseFloat(raw);
+  company.holding[field] = (Number.isFinite(n) && n > 0) ? n : null;
+  company.holding.held = true;
+  saveWatchlist();
+  renderWatchlist();
 }
 
 function addCompany(){
@@ -1486,7 +1758,7 @@ function addCompany(){
     return; // already on the list
   }
 
-  CONFIG.COMPANIES.push({ ticker, name });
+  CONFIG.COMPANIES.push(normalizeCompany({ ticker, name }));
   stocks[ticker] = { name, ...seedStock() };
   if (!MOCK_HEADLINES[ticker]) MOCK_HEADLINES[ticker] = "Watching for updates on this company";
 
