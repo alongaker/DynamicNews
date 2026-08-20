@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Market Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+
+/* ============================================================
+   CONFIG-DRIVEN COLORS — change these to re-theme the board
+   ============================================================ */
+:root{
+  --bg:            #0B0E14;
+  --panel:         #12161F;
+  --panel-raised:  #171C27;
+  --hairline:      #232936;
+  --text:          #E8E6DF;
+  --text-dim:      #7C8494;
+  --amber:         #F2A93B;
+  --up:            #35C48F;
+  --down:          #E85C4A;
+}
+
+*{ margin:0; padding:0; box-sizing:border-box; }
+
+html,body{
+  width:100%; height:100%;
+  background:var(--bg);
+  color:var(--text);
+  font-family:'IBM Plex Mono', monospace;
+  overflow:hidden;
+}
+
+/* ---------- layout shell ---------- */
+.board{
+  display:grid;
+  grid-template-rows: 84px 1fr 56px;
+  width:100vw; height:100vh;
+}
+
+/* ---------- header ---------- */
+header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 32px;
+  border-bottom:1px solid var(--hairline);
+  background:var(--panel);
+}
+.brand{
+  display:flex;
+  align-items:baseline;
+  gap:12px;
+}
+.brand-mark{
+  font-family:'Barlow Condensed', sans-serif;
+  font-weight:700;
+  font-size:28px;
+  letter-spacing:0.5px;
+  color:var(--text);
+}
+.brand-mark span{ color:var(--amber); }
+.brand-sub{
+  font-size:11px;
+  letter-spacing:2px;
+  color:var(--text-dim);
+  text-transform:uppercase;
+}
+.header-right{
+  display:flex;
+  align-items:center;
+  gap:28px;
+}
+.market-status{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:13px;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  color:var(--text-dim);
+}
+.status-dot{
+  width:8px; height:8px; border-radius:50%;
+  background:var(--up);
+  box-shadow:0 0 8px var(--up);
+}
+.status-dot.closed{
+  background:var(--down);
+  box-shadow:0 0 8px var(--down);
+}
+.clock{
+  font-size:22px;
+  font-weight:500;
+  letter-spacing:1px;
+  min-width:230px;
+  text-align:right;
+}
+.clock .date{
+  font-size:11px;
+  color:var(--text-dim);
+  letter-spacing:1.5px;
+  text-transform:uppercase;
+}
+
+/* ---------- main grid ---------- */
+main{
+  display:grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap:1px;
+  background:var(--hairline);
+  overflow:hidden;
+}
+
+/* ---------- spotlight (rotating hero card) ---------- */
+.spotlight{
+  background:var(--panel);
+  padding:36px 44px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  position:relative;
+  overflow:hidden;
+}
+.spotlight-eyebrow{
+  font-size:12px;
+  letter-spacing:3px;
+  text-transform:uppercase;
+  color:var(--text-dim);
+  margin-bottom:18px;
+}
+.spotlight-top{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+}
+.spotlight-id .ticker{
+  font-family:'Barlow Condensed', sans-serif;
+  font-weight:700;
+  font-size:64px;
+  line-height:1;
+  letter-spacing:0.5px;
+}
+.spotlight-id .name{
+  font-size:16px;
+  color:var(--text-dim);
+  margin-top:6px;
+  letter-spacing:0.5px;
+}
+.spotlight-price{
+  text-align:right;
+}
+.spotlight-price .value{
+  font-size:52px;
+  font-weight:600;
+  line-height:1;
+}
+.spotlight-price .delta{
+  margin-top:10px;
+  font-size:18px;
+  font-weight:500;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:4px 10px;
+  border-radius:4px;
+}
+.delta.up{ color:var(--up); background:rgba(53,196,143,0.1); }
+.delta.down{ color:var(--down); background:rgba(232,92,74,0.1); }
+
+.sparkline{
+  margin-top:32px;
+  width:100%;
+  height:120px;
+}
+.sparkline path{
+  fill:none;
+  stroke-width:2;
+}
+
+.spotlight-headline{
+  margin-top:30px;
+  padding-top:22px;
+  border-top:1px solid var(--hairline);
+  font-family:'Barlow Condensed', sans-serif;
+  font-size:22px;
+  font-weight:500;
+  line-height:1.35;
+  color:var(--text);
+  max-width:90%;
+}
+.spotlight-headline .tag{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:11px;
+  letter-spacing:2px;
+  color:var(--amber);
+  text-transform:uppercase;
+  display:block;
+  margin-bottom:8px;
+}
+
+.rotation-dots{
+  position:absolute;
+  bottom:30px;
+  right:44px;
+  display:flex;
+  gap:8px;
+}
+.rotation-dots .dot{
+  width:22px; height:3px;
+  background:var(--hairline);
+  border-radius:2px;
+  overflow:hidden;
+  position:relative;
+}
+.rotation-dots .dot .fill{
+  position:absolute; left:0; top:0; bottom:0;
+  width:0%;
+  background:var(--amber);
+}
+.rotation-dots .dot.done .fill{ width:100%; background:var(--text-dim); }
+
+/* ---------- watchlist ---------- */
+.watchlist{
+  background:var(--panel);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+.watchlist-head{
+  padding:18px 28px 12px;
+  font-size:11px;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  color:var(--text-dim);
+  border-bottom:1px solid var(--hairline);
+}
+.watchlist-rows{
+  overflow-y:auto;
+  flex:1;
+}
+.wl-row{
+  display:grid;
+  grid-template-columns: 90px 1fr 110px 90px;
+  align-items:center;
+  padding:14px 28px;
+  border-bottom:1px solid var(--hairline);
+  transition:background 0.3s ease;
+}
+.wl-row.active-row{
+  background:var(--panel-raised);
+}
+.wl-row .t{
+  font-weight:600;
+  font-size:16px;
+  letter-spacing:0.5px;
+}
+.wl-row .n{
+  font-family:'Barlow Condensed', sans-serif;
+  font-size:15px;
+  color:var(--text-dim);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  padding-right:12px;
+}
+.wl-row .p{
+  text-align:right;
+  font-size:15px;
+  font-weight:500;
+}
+.wl-row .c{
+  text-align:right;
+  font-size:14px;
+  font-weight:500;
+}
+.wl-row .c.up{ color:var(--up); }
+.wl-row .c.down{ color:var(--down); }
+
+/* ---------- news crawl ---------- */
+.crawl{
+  background:var(--panel-raised);
+  border-top:1px solid var(--hairline);
+  display:flex;
+  align-items:center;
+  overflow:hidden;
+  position:relative;
+}
+.crawl-label{
+  flex:0 0 auto;
+  background:var(--amber);
+  color:var(--bg);
+  font-family:'Barlow Condensed', sans-serif;
+  font-weight:700;
+  font-size:14px;
+  letter-spacing:1.5px;
+  height:100%;
+  display:flex;
+  align-items:center;
+  padding:0 20px;
+  z-index:2;
+}
+.crawl-track{
+  display:flex;
+  white-space:nowrap;
+  animation: scroll-left 45s linear infinite;
+  padding-left:100%;
+}
+.crawl-track span{
+  font-size:15px;
+  color:var(--text);
+  padding-right:70px;
+}
+.crawl-track span b{ color:var(--amber); font-weight:600; }
+@keyframes scroll-left{
+  from{ transform:translateX(0); }
+  to{ transform:translateX(-100%); }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .crawl-track{ animation:none; }
+}
+
+/* small-screen fallback (not the primary target, but keeps it usable) */
+@media (max-width:900px){
+  main{ grid-template-columns: 1fr; grid-template-rows: auto auto; }
+  .watchlist-rows{ max-height:40vh; }
+}
+</style>
+</head>
+<body>
+
+<div class="board">
+
+  <header>
+    <div class="brand">
+      <div class="brand-mark">MARKET<span>BOARD</span></div>
+      <div class="brand-sub">Conference Room Feed</div>
+    </div>
+    <div class="header-right">
+      <div class="market-status">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusText">Market Open</span>
+      </div>
+      <div class="clock">
+        <div id="clockTime">--:--:--</div>
+        <div class="date" id="clockDate">--</div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="spotlight">
+      <div class="spotlight-eyebrow">Spotlight</div>
+      <div class="spotlight-top">
+        <div class="spotlight-id">
+          <div class="ticker" id="spTicker">----</div>
+          <div class="name" id="spName">Loading&hellip;</div>
+        </div>
+        <div class="spotlight-price">
+          <div class="value" id="spPrice">$0.00</div>
+          <div class="delta" id="spDelta">+0.00 (0.00%)</div>
+        </div>
+      </div>
+
+      <svg class="sparkline" id="spSpark" viewBox="0 0 600 120" preserveAspectRatio="none"></svg>
+
+      <div class="spotlight-headline">
+        <span class="tag">Latest</span>
+        <span id="spHeadline">Fetching headline&hellip;</span>
+      </div>
+
+      <div class="rotation-dots" id="rotationDots"></div>
+    </section>
+
+    <section class="watchlist">
+      <div class="watchlist-head">Watchlist</div>
+      <div class="watchlist-rows" id="watchlistRows"></div>
+    </section>
+  </main>
+
+  <div class="crawl">
+    <div class="crawl-label">Headlines</div>
+    <div class="crawl-track" id="crawlTrack"></div>
+  </div>
+
+</div>
+
+<script>
+/* ================================================================
+   CONFIG
+   Edit this block to change companies, timing, and data source.
+   ================================================================ */
+
+const CONFIG = {
+  // Set to false once you've wired up a real API key below.
+  USE_MOCK_DATA: true,
+
+  // Get a free key at https://finnhub.io/register and paste it here.
+  // NOTE: this file runs entirely in the browser, so on a public GitHub
+  // Pages repo this key IS visible to anyone who views page source.
+  // Fine for a low-stakes internal display; use a proxy if that matters.
+  FINNHUB_API_KEY: "YOUR_API_KEY_HERE",
+
+  // How long the spotlight lingers on each company, in ms.
+  SPOTLIGHT_ROTATE_MS: 8000,
+
+  // How often prices refresh (mock: random walk tick; live: API poll), in ms.
+  PRICE_REFRESH_MS: 4000,
+
+  COMPANIES: [
+    { ticker: "AAPL",  name: "Apple Inc." },
+    { ticker: "MSFT",  name: "Microsoft Corp." },
+    { ticker: "NVDA",  name: "NVIDIA Corp." },
+    { ticker: "GOOGL", name: "Alphabet Inc." },
+    { ticker: "AMZN",  name: "Amazon.com Inc." },
+    { ticker: "TSLA",  name: "Tesla Inc." },
+    { ticker: "META",  name: "Meta Platforms" },
+    { ticker: "JPM",   name: "JPMorgan Chase" },
+  ],
+};
+
+// Mock headlines used for the spotlight card + bottom crawl.
+// Swap this for a real news API (e.g. Finnhub's /company-news endpoint)
+// if you want live headlines instead.
+const MOCK_HEADLINES = {
+  AAPL:  "Analysts eye holiday-quarter guidance ahead of next earnings call",
+  MSFT:  "Cloud unit growth remains focus for investors this quarter",
+  NVDA:  "Data-center demand continues to drive chip order backlog",
+  GOOGL: "Ad revenue trends watched closely as AI spending ramps",
+  AMZN:  "Logistics investment continues alongside retail margin focus",
+  TSLA:  "Delivery numbers remain a key swing factor for the stock",
+  META:  "Engagement metrics in focus as ad pricing stabilizes",
+  JPM:   "Rate outlook shapes bank earnings expectations this quarter",
+};
+
+/* ================================================================
+   STATE
+   ================================================================ */
+
+let stocks = {}; // ticker -> { price, prevClose, history: [...], name }
+let spotlightIndex = 0;
+let spotlightTimer = null;
+let dotFillTimer = null;
+
+/* ================================================================
+   DATA LAYER
+   Mock mode: random-walk simulation, kept in memory per ticker.
+   Live mode: replace the body of fetchQuote() with a real fetch call.
+   ================================================================ */
+
+function seedMockStock(ticker){
+  const base = 50 + Math.random() * 400;
+  const history = [];
+  let p = base;
+  for (let i = 0; i < 30; i++){
+    p = Math.max(1, p + (Math.random() - 0.5) * (base * 0.01));
+    history.push(p);
+  }
+  return {
+    price: history[history.length - 1],
+    prevClose: base,
+    history,
+  };
+}
+
+function stepMockStock(stock){
+  const drift = (Math.random() - 0.5) * (stock.price * 0.006);
+  const nextPrice = Math.max(1, stock.price + drift);
+  stock.history.push(nextPrice);
+  if (stock.history.length > 30) stock.history.shift();
+  stock.price = nextPrice;
+  return stock;
+}
+
+// Swap this function's body to call a live API when CONFIG.USE_MOCK_DATA is false.
+// Finnhub example:
+//   const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${CONFIG.FINNHUB_API_KEY}`);
+//   const data = await res.json();
+//   return { price: data.c, prevClose: data.pc };
+async function fetchQuote(ticker){
+  if (CONFIG.USE_MOCK_DATA){
+    return stepMockStock(stocks[ticker]);
+  }
+  try{
+    const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${CONFIG.FINNHUB_API_KEY}`);
+    const data = await res.json();
+    const stock = stocks[ticker];
+    stock.price = data.c;
+    stock.prevClose = data.pc;
+    stock.history.push(data.c);
+    if (stock.history.length > 30) stock.history.shift();
+    return stock;
+  } catch(err){
+    console.error("Live fetch failed for", ticker, err);
+    return stocks[ticker]; // fall back to last known value
+  }
+}
+
+function initStocks(){
+  CONFIG.COMPANIES.forEach(c => {
+    stocks[c.ticker] = { name: c.name, ...seedMockStock(c.ticker) };
+  });
+}
+
+async function refreshAllQuotes(){
+  await Promise.all(CONFIG.COMPANIES.map(c => fetchQuote(c.ticker)));
+  renderWatchlist();
+  renderSpotlight(); // keep spotlight numbers current between rotations
+}
+
+/* ================================================================
+   RENDER: header clock + market status
+   ================================================================ */
+
+function renderClock(){
+  const now = new Date();
+  document.getElementById("clockTime").textContent =
+    now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  document.getElementById("clockDate").textContent =
+    now.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" });
+
+  // Rough US market-hours check (9:30–16:00 ET, Mon–Fri). Good enough for a room display.
+  const day = now.getDay();
+  const minutes = now.getHours() * 60 + now.getMinutes();
+  const isWeekday = day >= 1 && day <= 5;
+  const isOpenHours = minutes >= 9 * 60 + 30 && minutes < 16 * 60;
+  const isOpen = isWeekday && isOpenHours;
+
+  document.getElementById("statusText").textContent = isOpen ? "Market Open" : "Market Closed";
+  document.getElementById("statusDot").classList.toggle("closed", !isOpen);
+}
+
+/* ================================================================
+   RENDER: spotlight card
+   ================================================================ */
+
+function buildSparkline(history){
+  const w = 600, h = 120, pad = 6;
+  const min = Math.min(...history);
+  const max = Math.max(...history);
+  const range = (max - min) || 1;
+  const stepX = (w - pad * 2) / (history.length - 1);
+
+  const points = history.map((v, i) => {
+    const x = pad + i * stepX;
+    const y = h - pad - ((v - min) / range) * (h - pad * 2);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(" ");
+
+  const up = history[history.length - 1] >= history[0];
+  const color = up ? "var(--up)" : "var(--down)";
+
+  return `<polyline points="${points}" style="stroke:${color}" />`;
+}
+
+function renderSpotlight(){
+  const ticker = CONFIG.COMPANIES[spotlightIndex].ticker;
+  const stock = stocks[ticker];
+  const change = stock.price - stock.prevClose;
+  const pct = (change / stock.prevClose) * 100;
+  const up = change >= 0;
+
+  document.getElementById("spTicker").textContent = ticker;
+  document.getElementById("spName").textContent = stock.name;
+  document.getElementById("spPrice").textContent = `$${stock.price.toFixed(2)}`;
+
+  const deltaEl = document.getElementById("spDelta");
+  deltaEl.textContent = `${up ? "+" : ""}${change.toFixed(2)} (${up ? "+" : ""}${pct.toFixed(2)}%)`;
+  deltaEl.className = `delta ${up ? "up" : "down"}`;
+
+  document.getElementById("spSpark").innerHTML = buildSparkline(stock.history);
+  document.getElementById("spHeadline").textContent = MOCK_HEADLINES[ticker] || "No headline available";
+}
+
+function renderRotationDots(){
+  const container = document.getElementById("rotationDots");
+  container.innerHTML = CONFIG.COMPANIES.map((_, i) =>
+    `<div class="dot ${i < spotlightIndex ? "done" : ""}" data-i="${i}"><div class="fill"></div></div>`
+  ).join("");
+}
+
+function animateActiveDot(){
+  clearInterval(dotFillTimer);
+  const dots = document.querySelectorAll(".rotation-dots .dot");
+  dots.forEach(d => d.classList.remove("active"));
+  const activeDot = dots[spotlightIndex];
+  if (!activeDot) return;
+  const fill = activeDot.querySelector(".fill");
+  fill.style.width = "0%";
+  fill.style.transition = `width ${CONFIG.SPOTLIGHT_ROTATE_MS}ms linear`;
+  requestAnimationFrame(() => { fill.style.width = "100%"; });
+}
+
+function rotateSpotlight(){
+  spotlightIndex = (spotlightIndex + 1) % CONFIG.COMPANIES.length;
+  if (spotlightIndex === 0) renderRotationDots(); // reset dot trail on full loop
+  renderSpotlight();
+  renderRotationDots();
+  animateActiveDot();
+  highlightActiveWatchlistRow();
+}
+
+/* ================================================================
+   RENDER: watchlist
+   ================================================================ */
+
+function renderWatchlist(){
+  const container = document.getElementById("watchlistRows");
+  container.innerHTML = CONFIG.COMPANIES.map((c, i) => {
+    const stock = stocks[c.ticker];
+    const change = stock.price - stock.prevClose;
+    const pct = (change / stock.prevClose) * 100;
+    const up = change >= 0;
+    return `
+      <div class="wl-row ${i === spotlightIndex ? "active-row" : ""}" data-i="${i}">
+        <div class="t">${c.ticker}</div>
+        <div class="n">${c.name}</div>
+        <div class="p">$${stock.price.toFixed(2)}</div>
+        <div class="c ${up ? "up" : "down"}">${up ? "+" : ""}${pct.toFixed(2)}%</div>
+      </div>`;
+  }).join("");
+}
+
+function highlightActiveWatchlistRow(){
+  document.querySelectorAll(".wl-row").forEach(row => {
+    row.classList.toggle("active-row", Number(row.dataset.i) === spotlightIndex);
+  });
+}
+
+/* ================================================================
+   RENDER: news crawl
+   ================================================================ */
+
+function renderCrawl(){
+  const items = CONFIG.COMPANIES.map(c =>
+    `<span><b>${c.ticker}</b> — ${MOCK_HEADLINES[c.ticker] || ""}</span>`
+  ).join("");
+  // duplicate content so the loop has no visible gap
+  document.getElementById("crawlTrack").innerHTML = items + items;
+}
+
+/* ================================================================
+   BOOT
+   ================================================================ */
+
+function boot(){
+  initStocks();
+  renderClock();
+  renderSpotlight();
+  renderRotationDots();
+  renderWatchlist();
+  renderCrawl();
+  animateActiveDot();
+
+  setInterval(renderClock, 1000);
+  setInterval(refreshAllQuotes, CONFIG.PRICE_REFRESH_MS);
+  spotlightTimer = setInterval(rotateSpotlight, CONFIG.SPOTLIGHT_ROTATE_MS);
+}
+
+boot();
+</script>
+
+</body>
+</html>
