@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API Key Management — Market Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+
+:root{
+  --bg:            #0B0E14;
+  --panel:         #12161F;
+  --panel-raised:  #171C27;
+  --hairline:      #232936;
+  --text:          #E8E6DF;
+  --text-dim:      #7C8494;
+  --amber:         #F2A93B;
+  --up:            #35C48F;
+  --down:          #E85C4A;
+}
+
+*{ margin:0; padding:0; box-sizing:border-box; }
+
+html,body{
+  min-height:100%;
+  background:var(--bg);
+  color:var(--text);
+  font-family:'IBM Plex Mono', monospace;
+}
+
+/* ---------- header, matches the board ---------- */
+header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 32px;
+  height:84px;
+  border-bottom:1px solid var(--hairline);
+  background:var(--panel);
+}
+.brand{
+  display:flex;
+  align-items:baseline;
+  gap:12px;
+}
+.brand-mark{
+  font-family:'Barlow Condensed', sans-serif;
+  font-weight:700;
+  font-size:28px;
+  letter-spacing:0.5px;
+  color:var(--text);
+}
+.brand-mark span{ color:var(--amber); }
+.brand-sub{
+  font-size:11px;
+  letter-spacing:2px;
+  color:var(--text-dim);
+  text-transform:uppercase;
+}
+.back-link{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  text-decoration:none;
+  color:var(--text-dim);
+  font-family:'Barlow Condensed', sans-serif;
+  font-size:14px;
+  font-weight:600;
+  letter-spacing:0.5px;
+  border:1px solid var(--hairline);
+  padding:9px 16px;
+  border-radius:6px;
+  transition:border-color 0.2s ease, color 0.2s ease;
+}
+.back-link:hover{ border-color:var(--amber); color:var(--amber); }
+
+/* ---------- page body ---------- */
+.page{
+  max-width:760px;
+  margin:0 auto;
+  padding:48px 32px 80px;
+}
+.page-title{
+  font-family:'Barlow Condensed', sans-serif;
+  font-weight:700;
+  font-size:34px;
+  margin-bottom:8px;
+}
+.page-sub{
+  color:var(--text-dim);
+  font-size:14px;
+  margin-bottom:36px;
+  max-width:56ch;
+  line-height:1.5;
+}
+
+/* ---------- mock toggle banner ---------- */
+.mock-banner{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  background:var(--panel);
+  border:1px solid var(--hairline);
+  border-radius:10px;
+  padding:18px 22px;
+  margin-bottom:32px;
+}
+.mock-banner .mb-text{ flex:1; }
+.mock-banner .mb-title{
+  font-family:'Barlow Condensed', sans-serif;
+  font-weight:600;
+  font-size:16px;
+  margin-bottom:3px;
+}
+.mock-banner .mb-sub{
+  font-size:12px;
+  color:var(--text-dim);
+}
+.toggle{
+  position:relative;
+  width:46px; height:26px;
+  flex:0 0 auto;
+}
+.toggle input{ opacity:0; width:0; height:0; }
+.toggle-track{
+  position:absolute; inset:0;
+  background:var(--hairline);
+  border-radius:20px;
+  cursor:pointer;
+  transition:background 0.2s ease;
+}
+.toggle-track::before{
+  content:"";
+  position:absolute;
+  width:20px; height:20px;
+  left:3px; top:3px;
+  background:var(--text-dim);
+  border-radius:50%;
+  transition:transform 0.2s ease, background 0.2s ease;
+}
+.toggle input:checked + .toggle-track{ background:rgba(242,169,59,0.25); }
+.toggle input:checked + .toggle-track::before{
+  transform:translateX(20px);
+  background:var(--amber);
+}
+
+/* ---------- provider cards ---------- */
+.section-label{
+  font-size:11px;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  color:var(--text-dim);
+  margin-bottom:14px;
+}
+.provider-list{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+.provider-card{
+  background:var(--panel);
+  border:1px solid var(--hairline);
+  border-radius:10px;
+  padding:22px 24px;
+  transition:border-color 0.2s ease;
+}
+.provider-card.is-active{
+  border-color:var(--amber);
+}
+.pc-top{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  margin-bottom:14px;
+  gap:12px;
+}
+.pc-name{
+  font-family:'Barlow Condensed', sans-serif;
+  font-weight:700;
+  font-size:20px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.pc-badge{
+  font-size:10px;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  padding:3px 8px;
+  border-radius:20px;
+  font-family:'IBM Plex Mono', monospace;
+  font-weight:500;
+}
+.pc-badge.active{ background:rgba(242,169,59,0.15); color:var(--amber); }
+.pc-badge.saved{ background:rgba(53,196,143,0.12); color:var(--up); }
+.pc-blurb{
+  font-size:12px;
+  color:var(--text-dim);
+  margin-top:4px;
+}
+.pc-signup{
+  font-size:12px;
+  color:var(--text-dim);
+  text-decoration:none;
+  border-bottom:1px dotted var(--text-dim);
+  white-space:nowrap;
+  flex:0 0 auto;
+}
+.pc-signup:hover{ color:var(--amber); border-color:var(--amber); }
+
+.pc-form{
+  display:flex;
+  gap:8px;
+  margin-bottom:12px;
+}
+.pc-form input{
+  flex:1;
+  background:var(--bg);
+  border:1px solid var(--hairline);
+  color:var(--text);
+  font-family:'IBM Plex Mono', monospace;
+  font-size:13px;
+  padding:10px 12px;
+  border-radius:6px;
+  outline:none;
+}
+.pc-form input:focus{ border-color:var(--amber); }
+
+.pc-actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.pc-btn{
+  font-family:'Barlow Condensed', sans-serif;
+  font-weight:600;
+  font-size:13px;
+  letter-spacing:0.3px;
+  padding:8px 16px;
+  border-radius:6px;
+  cursor:pointer;
+  border:1px solid var(--hairline);
+  background:none;
+  color:var(--text);
+}
+.pc-btn:hover{ border-color:var(--text-dim); }
+.pc-btn.primary{
+  background:var(--amber);
+  color:var(--bg);
+  border:none;
+}
+.pc-btn.primary:hover{ opacity:0.9; }
+.pc-btn.primary:disabled{
+  opacity:0.4;
+  cursor:not-allowed;
+}
+.pc-btn.danger{ color:var(--down); }
+.pc-btn.danger:hover{ border-color:var(--down); }
+.pc-btn:disabled{ opacity:0.4; cursor:not-allowed; }
+
+.pc-status{
+  font-size:11px;
+  color:var(--text-dim);
+  margin-top:10px;
+}
+.pc-status.ok{ color:var(--up); }
+
+.page-footnote{
+  margin-top:40px;
+  font-size:11px;
+  color:var(--text-dim);
+  line-height:1.6;
+  max-width:60ch;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-mark">MARKET<span>BOARD</span></div>
+    <div class="brand-sub">API Key Management</div>
+  </div>
+  <a class="back-link" href="index.html">&larr; Back to board</a>
+</header>
+
+<div class="page">
+  <div class="page-title">API Key Management</div>
+  <div class="page-sub">
+    Connect a market-data provider so the board shows real prices instead of simulated ones.
+    Keys are stored only in this browser — nothing is sent anywhere except directly to the provider you choose.
+  </div>
+
+  <div class="mock-banner">
+    <div class="mb-text">
+      <div class="mb-title">Use demo data</div>
+      <div class="mb-sub">Board runs on simulated prices, no key required. Turn this off once a provider below is active.</div>
+    </div>
+    <label class="toggle">
+      <input type="checkbox" id="mockToggle">
+      <span class="toggle-track"></span>
+    </label>
+  </div>
+
+  <div class="section-label">Providers</div>
+  <div class="provider-list" id="providerList"></div>
+
+  <div class="page-footnote">
+    Since this page runs entirely in your browser, any key you enter is visible to anyone who views this
+    page's source on a public site — fine for a low-stakes internal display, but avoid using this on a
+    public repo if the key needs to stay private.
+  </div>
+</div>
+
+<script src="providers.js"></script>
+<script>
+
+function render(){
+  const activeProvider = loadActiveProvider();
+  const savedKeys = loadSavedApiKeys();
+  const useMock = loadUseMock();
+
+  document.getElementById("mockToggle").checked = useMock;
+
+  const list = document.getElementById("providerList");
+  list.innerHTML = Object.entries(PROVIDERS).map(([id, p]) => {
+    const isActive = id === activeProvider && !useMock;
+    const hasSaved = !!savedKeys[id];
+    return `
+      <div class="provider-card ${isActive ? "is-active" : ""}" data-id="${id}">
+        <div class="pc-top">
+          <div>
+            <div class="pc-name">
+              ${p.label}
+              ${isActive ? `<span class="pc-badge active">Active</span>` : ""}
+              ${hasSaved && !isActive ? `<span class="pc-badge saved">Key saved</span>` : ""}
+            </div>
+            <div class="pc-blurb">${p.blurb}</div>
+          </div>
+          <a class="pc-signup" href="${p.signupUrl}" target="_blank" rel="noopener">Get a key &rarr;</a>
+        </div>
+
+        <div class="pc-form">
+          <input type="text" class="key-input" data-id="${id}" placeholder="Paste ${p.label} API key" value="${savedKeys[id] || ""}">
+        </div>
+
+        <div class="pc-actions">
+          <button class="pc-btn primary save-btn" data-id="${id}">Save key</button>
+          <button class="pc-btn set-active-btn" data-id="${id}" ${!hasSaved ? "disabled" : ""} ${isActive ? "disabled" : ""}>
+            ${isActive ? "Currently active" : "Set as active"}
+          </button>
+          ${hasSaved ? `<button class="pc-btn danger remove-btn" data-id="${id}">Remove key</button>` : ""}
+        </div>
+
+        <div class="pc-status" id="status-${id}"></div>
+      </div>
+    `;
+  }).join("");
+
+  list.querySelectorAll(".save-btn").forEach(btn => {
+    btn.addEventListener("click", () => saveKey(btn.dataset.id));
+  });
+  list.querySelectorAll(".set-active-btn").forEach(btn => {
+    btn.addEventListener("click", () => setActive(btn.dataset.id));
+  });
+  list.querySelectorAll(".remove-btn").forEach(btn => {
+    btn.addEventListener("click", () => removeKey(btn.dataset.id));
+  });
+}
+
+function saveKey(id){
+  const input = document.querySelector(`.key-input[data-id="${id}"]`);
+  const key = input.value.trim();
+  const keys = loadSavedApiKeys();
+
+  if (!key){
+    delete keys[id];
+  } else {
+    keys[id] = key;
+  }
+  saveApiKeys(keys);
+
+  const status = document.getElementById(`status-${id}`);
+  status.textContent = key ? "Saved." : "Key cleared.";
+  status.classList.add("ok");
+  setTimeout(() => { render(); }, 400);
+}
+
+function setActive(id){
+  saveActiveProvider(id);
+  saveUseMock(false); // picking a provider implies you want live data
+  render();
+}
+
+function removeKey(id){
+  const keys = loadSavedApiKeys();
+  delete keys[id];
+  saveApiKeys(keys);
+
+  // if the removed key belonged to the active provider, fall back to demo data
+  if (loadActiveProvider() === id){
+    saveUseMock(true);
+  }
+  render();
+}
+
+document.getElementById("mockToggle").addEventListener("change", (e) => {
+  saveUseMock(e.target.checked);
+  render();
+});
+
+render();
+</script>
+
+</body>
+</html>
