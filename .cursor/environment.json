@@ -1,0 +1,17 @@
+{
+  "name": "Market Board",
+  "install": "echo 'Market Board is a static site (HTML/CSS/JS) with no dependencies or build step; nothing to install.'",
+  "terminals": [
+    {
+      "name": "static-server",
+      "command": "python3 -m http.server 8000",
+      "description": "Serves the Market Board static site over HTTP. Open http://localhost:8000/ for the board and http://localhost:8000/api-keys.html for API key management."
+    }
+  ],
+  "ports": [
+    {
+      "name": "web",
+      "port": 8000
+    }
+  ]
+}
