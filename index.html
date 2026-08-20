@@ -244,6 +244,36 @@ header{
 }
 .settings-close:hover{ border-color:var(--text-dim); color:var(--text); }
 
+.settings-divider{
+  height:1px;
+  background:var(--hairline);
+  margin:6px 0 18px;
+}
+
+.provider-select{
+  width:100%;
+  background:var(--bg);
+  border:1px solid var(--hairline);
+  color:var(--text);
+  font-family:'IBM Plex Mono', monospace;
+  font-size:13px;
+  padding:9px 10px;
+  border-radius:5px;
+  outline:none;
+}
+.provider-select:focus{ border-color:var(--amber); }
+
+.mock-toggle{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:12px;
+  color:var(--text-dim);
+  cursor:pointer;
+  margin-bottom:4px;
+}
+.mock-toggle input{ accent-color:var(--amber); width:15px; height:15px; }
+
 /* ---------- main grid ---------- */
 main{
   display:grid;
@@ -542,6 +572,24 @@ main{
     </div>
     <div class="settings-hint">Live prices only work for real tickers once a data API is connected — otherwise a mock price is generated.</div>
 
+    <div class="settings-divider"></div>
+    <h2>Data Source</h2>
+    <div class="sub" id="providerSignupHint">Pick a provider and paste in your API key.</div>
+
+    <div class="settings-form" style="margin-bottom:10px;">
+      <select id="providerSelect" class="provider-select"></select>
+    </div>
+    <div class="settings-form">
+      <input type="text" id="apiKeyInput" class="name-input" placeholder="API key">
+    </div>
+
+    <label class="mock-toggle">
+      <input type="checkbox" id="useMockToggle">
+      <span>Use demo data instead (no key needed)</span>
+    </label>
+
+    <button class="settings-close" id="saveDataSourceBtn" style="align-self:stretch; margin-top:10px; background:var(--amber); color:var(--bg); border:none;">Save data source</button>
+
     <button class="settings-close" id="closeSettingsBtn">Done</button>
   </div>
 </div>
@@ -553,14 +601,16 @@ main{
    ================================================================ */
 
 const CONFIG = {
-  // Set to false once you've wired up a real API key below.
+  // Set to false once you've picked a provider and entered a key in Settings.
   USE_MOCK_DATA: true,
 
-  // Get a free key at https://finnhub.io/register and paste it here.
+  // Which provider to use — set from the Settings panel, kept here as the default.
+  PROVIDER: "finnhub",
+
   // NOTE: this file runs entirely in the browser, so on a public GitHub
-  // Pages repo this key IS visible to anyone who views page source.
+  // Pages repo any key you enter IS visible to anyone who views page source.
   // Fine for a low-stakes internal display; use a proxy if that matters.
-  FINNHUB_API_KEY: "YOUR_API_KEY_HERE",
+  API_KEY: "",
 
   // How long the spotlight lingers on each company, in ms.
   SPOTLIGHT_ROTATE_MS: 8000,
@@ -580,7 +630,48 @@ const CONFIG = {
   ],
 };
 
+/* ----------------------------------------------------------------
+   DATA PROVIDERS
+   Each entry knows how to build a quote URL and how to pull
+   { price, prevClose } out of that provider's response shape.
+   Add a new provider by adding another entry here — everything
+   else (Settings dropdown, fetchQuote) picks it up automatically.
+   ---------------------------------------------------------------- */
+const PROVIDERS = {
+  finnhub: {
+    label: "Finnhub",
+    signupUrl: "https://finnhub.io/register",
+    buildUrl: (ticker, key) => `https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${key}`,
+    parse: (data) => ({ price: data.c, prevClose: data.pc }),
+  },
+  alphavantage: {
+    label: "Alpha Vantage",
+    signupUrl: "https://www.alphavantage.co/support/#api-key",
+    buildUrl: (ticker, key) => `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${ticker}&apikey=${key}`,
+    parse: (data) => {
+      const q = data["Global Quote"] || {};
+      return { price: parseFloat(q["05. price"]), prevClose: parseFloat(q["08. previous close"]) };
+    },
+  },
+  twelvedata: {
+    label: "Twelve Data",
+    signupUrl: "https://twelvedata.com/pricing",
+    buildUrl: (ticker, key) => `https://api.twelvedata.com/quote?symbol=${ticker}&apikey=${key}`,
+    parse: (data) => ({ price: parseFloat(data.close), prevClose: parseFloat(data.previous_close) }),
+  },
+  polygon: {
+    label: "Polygon.io",
+    signupUrl: "https://polygon.io/pricing",
+    buildUrl: (ticker, key) => `https://api.polygon.io/v2/aggs/ticker/${ticker}/prev?apiKey=${key}`,
+    parse: (data) => {
+      const r = (data.results && data.results[0]) || {};
+      return { price: r.c, prevClose: r.o };
+    },
+  },
+};
+
 const WATCHLIST_STORAGE_KEY = "marketboard_watchlist";
+const DATASOURCE_STORAGE_KEY = "marketboard_datasource";
 
 // If a saved watchlist exists in this browser, use it instead of the default list above.
 (function loadSavedWatchlist(){
@@ -594,8 +685,30 @@ const WATCHLIST_STORAGE_KEY = "marketboard_watchlist";
   }
 })();
 
+// If saved data-source settings exist (provider + key + live/mock toggle), use them.
+(function loadSavedDataSource(){
+  try{
+    const saved = JSON.parse(localStorage.getItem(DATASOURCE_STORAGE_KEY));
+    if (saved && typeof saved === "object"){
+      if (saved.provider && PROVIDERS[saved.provider]) CONFIG.PROVIDER = saved.provider;
+      if (typeof saved.apiKey === "string") CONFIG.API_KEY = saved.apiKey;
+      if (typeof saved.useMock === "boolean") CONFIG.USE_MOCK_DATA = saved.useMock;
+    }
+  } catch(err){
+    // no valid saved settings — stick with defaults
+  }
+})();
+
 function saveWatchlist(){
   localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(CONFIG.COMPANIES));
+}
+
+function saveDataSource(){
+  localStorage.setItem(DATASOURCE_STORAGE_KEY, JSON.stringify({
+    provider: CONFIG.PROVIDER,
+    apiKey: CONFIG.API_KEY,
+    useMock: CONFIG.USE_MOCK_DATA,
+  }));
 }
 
 // Mock headlines used for the spotlight card + bottom crawl.
@@ -651,23 +764,25 @@ function stepMockStock(stock){
   return stock;
 }
 
-// Swap this function's body to call a live API when CONFIG.USE_MOCK_DATA is false.
-// Finnhub example:
-//   const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${CONFIG.FINNHUB_API_KEY}`);
-//   const data = await res.json();
-//   return { price: data.c, prevClose: data.pc };
+// Uses whichever provider is selected in Settings (see PROVIDERS above).
+// Falls back to the stock's last known value if the request fails, so a
+// bad key or a rate-limit hiccup doesn't blank out the display.
 async function fetchQuote(ticker){
-  if (CONFIG.USE_MOCK_DATA){
+  if (CONFIG.USE_MOCK_DATA || !CONFIG.API_KEY){
     return stepMockStock(stocks[ticker]);
   }
+  const provider = PROVIDERS[CONFIG.PROVIDER];
   try{
-    const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${CONFIG.FINNHUB_API_KEY}`);
+    const res = await fetch(provider.buildUrl(ticker, CONFIG.API_KEY));
     const data = await res.json();
+    const { price, prevClose } = provider.parse(data);
     const stock = stocks[ticker];
-    stock.price = data.c;
-    stock.prevClose = data.pc;
-    stock.history.push(data.c);
-    if (stock.history.length > 30) stock.history.shift();
+    if (typeof price === "number" && !isNaN(price)){
+      stock.price = price;
+      stock.prevClose = (typeof prevClose === "number" && !isNaN(prevClose)) ? prevClose : stock.prevClose;
+      stock.history.push(stock.price);
+      if (stock.history.length > 30) stock.history.shift();
+    }
     return stock;
   } catch(err){
     console.error("Live fetch failed for", ticker, err);
@@ -897,8 +1012,39 @@ function refreshAfterListChange(){
   }
 }
 
+function populateProviderSelect(){
+  const select = document.getElementById("providerSelect");
+  select.innerHTML = Object.entries(PROVIDERS).map(([id, p]) =>
+    `<option value="${id}">${p.label}</option>`
+  ).join("");
+  select.value = CONFIG.PROVIDER;
+  updateProviderSignupHint();
+}
+
+function updateProviderSignupHint(){
+  const provider = PROVIDERS[document.getElementById("providerSelect").value];
+  document.getElementById("providerSignupHint").textContent =
+    `Pick a provider and paste in your API key. Don't have one? Get a ${provider.label} key at ${provider.signupUrl}`;
+}
+
+function loadDataSourceFormValues(){
+  document.getElementById("providerSelect").value = CONFIG.PROVIDER;
+  document.getElementById("apiKeyInput").value = CONFIG.API_KEY;
+  document.getElementById("useMockToggle").checked = CONFIG.USE_MOCK_DATA;
+  updateProviderSignupHint();
+}
+
+function saveDataSourceSettings(){
+  CONFIG.PROVIDER = document.getElementById("providerSelect").value;
+  CONFIG.API_KEY = document.getElementById("apiKeyInput").value.trim();
+  CONFIG.USE_MOCK_DATA = document.getElementById("useMockToggle").checked;
+  saveDataSource();
+  refreshAllQuotes(); // pull fresh data immediately with the new settings
+}
+
 function openSettings(){
   renderSettingsList();
+  loadDataSourceFormValues();
   document.getElementById("settingsOverlay").classList.add("open");
 }
 
@@ -923,8 +1069,12 @@ function boot(){
   setInterval(refreshAllQuotes, CONFIG.PRICE_REFRESH_MS);
   spotlightTimer = setInterval(rotateSpotlight, CONFIG.SPOTLIGHT_ROTATE_MS);
 
+  populateProviderSelect();
+
   document.getElementById("settingsBtn").addEventListener("click", openSettings);
   document.getElementById("closeSettingsBtn").addEventListener("click", closeSettings);
+  document.getElementById("providerSelect").addEventListener("change", updateProviderSignupHint);
+  document.getElementById("saveDataSourceBtn").addEventListener("click", saveDataSourceSettings);
   document.getElementById("settingsOverlay").addEventListener("click", (e) => {
     if (e.target.id === "settingsOverlay") closeSettings();
   });
