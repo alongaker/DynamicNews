@@ -290,8 +290,9 @@ header{
 <div class="page">
   <div class="page-title">API Key Management</div>
   <div class="page-sub">
-    Connect a market-data provider so the board shows real prices instead of simulated ones.
-    Keys are stored only in this browser — nothing is sent anywhere except directly to the provider you choose.
+    Connect one or more market-data providers. The <b>active</b> provider is tried first;
+    if it can’t fulfill a request (for example Finnhub free tier blocking year charts),
+    the board automatically tries your other saved keys. Keys stay in this browser only.
   </div>
 
   <div class="mock-banner">
@@ -309,6 +310,8 @@ header{
   <div class="provider-list" id="providerList"></div>
 
   <div class="page-footnote">
+    Tip: keep Finnhub as active for live quotes, and also save Twelve Data or Alpha Vantage for
+    1Y charts — the board will fall back automatically when Finnhub history isn’t available.
     Since this page runs entirely in your browser, any key you enter is visible to anyone who views this
     page's source on a public site — fine for a low-stakes internal display, but avoid using this on a
     public repo if the key needs to stay private.

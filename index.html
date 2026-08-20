@@ -394,21 +394,24 @@ main{
   width:100%;
   height:120px;
 }
-.sparkline path{
+.sparkline path,
+.sparkline polyline{
   fill:none;
   stroke-width:2;
 }
+.chart-label{
+  margin-top:10px;
+  font-size:11px;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  color:var(--text-dim);
+}
 
 .spotlight-headline{
-  margin-top:30px;
-  padding-top:22px;
+  margin-top:24px;
+  padding-top:18px;
   border-top:1px solid var(--hairline);
-  font-family:'Barlow Condensed', sans-serif;
-  font-size:22px;
-  font-weight:500;
-  line-height:1.35;
-  color:var(--text);
-  max-width:90%;
+  max-width:94%;
 }
 .spotlight-headline .tag{
   font-family:'IBM Plex Mono', monospace;
@@ -417,7 +420,53 @@ main{
   color:var(--amber);
   text-transform:uppercase;
   display:block;
-  margin-bottom:8px;
+  margin-bottom:10px;
+}
+.headline-list{
+  list-style:none;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.headline-list li{
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+  min-width:0;
+}
+.headline-list a.headline-link{
+  font-family:'Barlow Condensed', sans-serif;
+  font-size:18px;
+  font-weight:500;
+  line-height:1.3;
+  color:var(--text);
+  text-decoration:none;
+  border-bottom:1px solid transparent;
+  transition:border-color 0.15s ease, color 0.15s ease;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.headline-list a.headline-link:hover{
+  color:var(--amber);
+  border-bottom-color:var(--amber);
+}
+.headline-list .headline-text{
+  font-family:'Barlow Condensed', sans-serif;
+  font-size:18px;
+  font-weight:500;
+  line-height:1.3;
+  color:var(--text-dim);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.headline-list .headline-source{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:10px;
+  letter-spacing:1px;
+  color:var(--text-dim);
+  text-transform:uppercase;
 }
 
 .rotation-dots{
@@ -506,6 +555,7 @@ main{
   align-items:center;
   overflow:hidden;
   position:relative;
+  gap:0;
 }
 .crawl-label{
   flex:0 0 auto;
@@ -521,25 +571,64 @@ main{
   padding:0 20px;
   z-index:2;
 }
-.crawl-track{
-  display:flex;
-  white-space:nowrap;
-  animation: scroll-left 45s linear infinite;
-  padding-left:100%;
+.crawl-nav{
+  flex:0 0 auto;
+  width:36px;
+  height:100%;
+  border:none;
+  background:var(--panel);
+  color:var(--text-dim);
+  cursor:pointer;
+  font-size:18px;
+  line-height:1;
+  z-index:2;
+  transition:color 0.15s ease, background 0.15s ease;
 }
+.crawl-nav:hover{
+  color:var(--amber);
+  background:var(--panel-raised);
+}
+.crawl-viewport{
+  flex:1;
+  min-width:0;
+  height:100%;
+  overflow-x:auto;
+  overflow-y:hidden;
+  display:flex;
+  align-items:center;
+  scrollbar-width:thin;
+  scrollbar-color:var(--hairline) transparent;
+  cursor:grab;
+}
+.crawl-viewport:active{ cursor:grabbing; }
+.crawl-viewport::-webkit-scrollbar{ height:6px; }
+.crawl-viewport::-webkit-scrollbar-thumb{
+  background:var(--hairline);
+  border-radius:4px;
+}
+.crawl-track{
+  display:inline-flex;
+  align-items:center;
+  white-space:nowrap;
+  width:max-content;
+  padding:0 12px;
+}
+.crawl-track a,
 .crawl-track span{
   font-size:15px;
   color:var(--text);
   padding-right:70px;
+  text-decoration:none;
+  flex:0 0 auto;
 }
+.crawl-track a:hover{
+  color:var(--amber);
+}
+.crawl-track a b,
 .crawl-track span b{ color:var(--amber); font-weight:600; }
-@keyframes scroll-left{
-  from{ transform:translateX(0); }
-  to{ transform:translateX(-100%); }
-}
 
 @media (prefers-reduced-motion: reduce){
-  .crawl-track{ animation:none; }
+  .crawl{ --crawl-auto: 0; }
 }
 
 /* small-screen fallback (not the primary target, but keeps it usable) */
@@ -587,10 +676,13 @@ main{
       </div>
 
       <svg class="sparkline" id="spSpark" viewBox="0 0 600 120" preserveAspectRatio="none"></svg>
+      <div class="chart-label" id="chartLabel">1Y performance</div>
 
       <div class="spotlight-headline">
         <span class="tag">Latest</span>
-        <span id="spHeadline">Fetching headline&hellip;</span>
+        <ul class="headline-list" id="spHeadlineList">
+          <li><span class="headline-text">Fetching headlines&hellip;</span></li>
+        </ul>
       </div>
 
       <div class="rotation-dots" id="rotationDots"></div>
@@ -602,9 +694,13 @@ main{
     </section>
   </main>
 
-  <div class="crawl">
+  <div class="crawl" id="headlineCrawl">
     <div class="crawl-label">Headlines</div>
-    <div class="crawl-track" id="crawlTrack"></div>
+    <button type="button" class="crawl-nav" id="crawlPrev" aria-label="Scroll headlines left">&#8249;</button>
+    <div class="crawl-viewport" id="crawlViewport">
+      <div class="crawl-track" id="crawlTrack"></div>
+    </div>
+    <button type="button" class="crawl-nav" id="crawlNext" aria-label="Scroll headlines right">&#8250;</button>
   </div>
 
 </div>
@@ -636,7 +732,7 @@ main{
 
     <div class="settings-form">
       <input type="text" id="newTicker" class="ticker-input" placeholder="TICKER" maxlength="6">
-      <input type="text" id="newName" class="name-input" placeholder="Company name">
+      <input type="text" id="newName" class="name-input" placeholder="Company name" maxlength="30">
       <button id="addTickerBtn">Add</button>
     </div>
     <div class="settings-hint">Live prices only work for real tickers once a data API is connected — otherwise a mock price is generated.</div>
@@ -662,14 +758,10 @@ const CONFIG = {
   PRICE_REFRESH_MS: 4000,
 
   COMPANIES: [
-    { ticker: "AAPL",  name: "Apple Inc." },
-    { ticker: "MSFT",  name: "Microsoft Corp." },
-    { ticker: "NVDA",  name: "NVIDIA Corp." },
-    { ticker: "GOOGL", name: "Alphabet Inc." },
-    { ticker: "AMZN",  name: "Amazon.com Inc." },
-    { ticker: "TSLA",  name: "Tesla Inc." },
-    { ticker: "META",  name: "Meta Platforms" },
-    { ticker: "JPM",   name: "JPMorgan Chase" },
+    { ticker: "ASTS", name: "AST SpaceMobile" },
+    { ticker: "JMIA", name: "Jumia" },
+    { ticker: "RVMD", name: "Revolution Medicines" },
+    { ticker: "CELC", name: "Celcuity" },
   ],
 };
 
@@ -696,25 +788,24 @@ function saveWatchlist(){
   localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(CONFIG.COMPANIES));
 }
 
-// Mock headlines used for the spotlight card + bottom crawl.
-// Swap this for a real news API (e.g. Finnhub's /company-news endpoint)
-// if you want live headlines instead.
+// One-year chart only for now (about one trading point per ~trading day, downsampled for the SVG).
+const CHART_CALENDAR_DAYS = 365;
+const CHART_POINTS = 100;
+
+// Fallback blurbs used only in demo mode or when no live article is available.
 const MOCK_HEADLINES = {
-  AAPL:  "Analysts eye holiday-quarter guidance ahead of next earnings call",
-  MSFT:  "Cloud unit growth remains focus for investors this quarter",
-  NVDA:  "Data-center demand continues to drive chip order backlog",
-  GOOGL: "Ad revenue trends watched closely as AI spending ramps",
-  AMZN:  "Logistics investment continues alongside retail margin focus",
-  TSLA:  "Delivery numbers remain a key swing factor for the stock",
-  META:  "Engagement metrics in focus as ad pricing stabilizes",
-  JPM:   "Rate outlook shapes bank earnings expectations this quarter",
+  ASTS: "Satellite network progress remains a key focus for investors",
+  JMIA: "African e-commerce trends watched as marketplace metrics update",
+  RVMD: "Pipeline catalysts and trial readouts stay in focus this quarter",
+  CELC: "Clinical development updates drive near-term trading interest",
 };
 
 /* ================================================================
    STATE
    ================================================================ */
 
-let stocks = {}; // ticker -> { price, prevClose, history: [...], name }
+let stocks = {}; // ticker -> { price, prevClose, history, name }
+let companyNews = {}; // ticker -> [{ title, url, source }]
 let spotlightIndex = 0;
 let spotlightTimer = null;
 let dotFillTimer = null;
@@ -722,62 +813,229 @@ let dotFillTimer = null;
 /* ================================================================
    DATA LAYER
    Mock mode: random-walk simulation, kept in memory per ticker.
-   Live mode: uses whichever provider is active (see providers.js).
+   Live mode: real quotes + 1Y history only — never mix in fake charts.
    ================================================================ */
 
-function seedMockStock(ticker){
-  const base = 50 + Math.random() * 400;
-  const history = [];
-  let p = base;
-  for (let i = 0; i < 30; i++){
-    p = Math.max(1, p + (Math.random() - 0.5) * (base * 0.01));
-    history.push(p);
+function usingLiveData(){
+  // Live as long as demo mode is off and at least one provider key is saved.
+  return !CONFIG.USE_MOCK_DATA && hasAnySavedApiKey();
+}
+
+function isValidPrice(n){
+  return typeof n === "number" && !isNaN(n) && n > 0 && isFinite(n);
+}
+
+function sanitizeHistory(values){
+  if (!Array.isArray(values)) return [];
+  return values.filter(isValidPrice);
+}
+
+function downsample(values, maxPoints){
+  const clean = sanitizeHistory(values);
+  if (clean.length === 0) return [];
+  if (clean.length <= maxPoints) return clean.slice();
+  const out = [];
+  const step = (clean.length - 1) / (maxPoints - 1);
+  for (let i = 0; i < maxPoints; i++){
+    out.push(clean[Math.round(i * step)]);
   }
+  return out;
+}
+
+function buildMockHistory(endPrice, points){
+  const history = [];
+  let p = endPrice;
+  // Walk backward with modest daily-ish moves so we never invent a $0 print.
+  for (let i = points - 1; i >= 0; i--){
+    history[i] = p;
+    const step = (Math.random() - 0.48) * (endPrice * 0.02);
+    p = Math.max(endPrice * 0.25, p - step);
+  }
+  history[points - 1] = endPrice;
+  return history;
+}
+
+function chartHistory(stock){
+  if (!stock) return [];
+
+  // Live mode before 1Y history arrives: show only the day move, never a
+  // random year path that later snaps to the real price (that caused the cliff).
+  if (usingLiveData() && !stock.historyFetched){
+    if (isValidPrice(stock.price) && isValidPrice(stock.prevClose)){
+      return [stock.prevClose, stock.price];
+    }
+    if (isValidPrice(stock.price)) return [stock.price, stock.price];
+    return [];
+  }
+
+  const series = sanitizeHistory(stock.history).slice();
+  if (isValidPrice(stock.price)){
+    if (series.length === 0) series.push(stock.price);
+    else series[series.length - 1] = stock.price;
+  }
+  if (series.length === 1 && isValidPrice(stock.prevClose)){
+    series.unshift(stock.prevClose);
+  }
+  return series;
+}
+
+function seedMockStock(){
+  const base = 50 + Math.random() * 400;
+  const history = buildMockHistory(base, CHART_POINTS);
   return {
-    price: history[history.length - 1],
-    prevClose: base,
+    price: base,
+    prevClose: history[history.length - 2] || base,
     history,
+    historyFetched: true, // mock history is intentional, not a pending live fetch
+    historyIsYear: true,
   };
+}
+
+function seedLiveStock(){
+  return {
+    price: null,
+    prevClose: null,
+    history: [],
+    historyFetched: false,
+    historyIsYear: false,
+  };
+}
+
+function seedStock(){
+  return usingLiveData() ? seedLiveStock() : seedMockStock();
 }
 
 function stepMockStock(stock){
   const drift = (Math.random() - 0.5) * (stock.price * 0.006);
-  const nextPrice = Math.max(1, stock.price + drift);
-  stock.history.push(nextPrice);
-  if (stock.history.length > 30) stock.history.shift();
+  const nextPrice = Math.max(stock.price * 0.5, stock.price + drift);
+  stock.prevClose = stock.price;
   stock.price = nextPrice;
+  stock.history = sanitizeHistory(stock.history);
+  stock.history.push(nextPrice);
+  if (stock.history.length > CHART_POINTS) stock.history.shift();
   return stock;
 }
 
-// Uses whichever provider is active (set on api-keys.html).
-// Falls back to the stock's last known value if the request fails, so a
-// bad key or a rate-limit hiccup doesn't blank out the display.
+function historyLooksUsable(data){
+  if (!data || typeof data !== "object") return false;
+  if (data.error || data.Note || data["Error Message"] || data["Information"]) return false;
+  if (data.status === "error") return false;
+  return true;
+}
+
+async function fetchQuoteFromProvider(ticker, providerId, key){
+  const provider = PROVIDERS[providerId];
+  if (!provider || !key) return null;
+  const res = await fetch(provider.buildUrl(ticker, key));
+  const data = await res.json();
+  if (data && (data.Note || data["Error Message"] || data["Information"] || data.status === "error")){
+    return null;
+  }
+  const parsed = provider.parse(data);
+  if (!isValidPrice(parsed.price)) return null;
+  return {
+    price: parsed.price,
+    prevClose: isValidPrice(parsed.prevClose) ? parsed.prevClose : null,
+    providerId,
+  };
+}
+
+async function fetchYearHistoryFromProvider(ticker, providerId, key, from, to){
+  const provider = PROVIDERS[providerId];
+  if (!provider || !provider.buildHistoryUrl || !provider.parseHistory || !key) return null;
+  const res = await fetch(provider.buildHistoryUrl(ticker, key, from, to));
+  const data = await res.json();
+  if (!historyLooksUsable(data)) return null;
+  const closes = sanitizeHistory(provider.parseHistory(data, from, to));
+  if (closes.length < 2) return null;
+  return {
+    series: downsample(closes, CHART_POINTS),
+    providerId,
+  };
+}
+
+// Try active provider first, then any other saved keys.
+async function fetchYearHistory(ticker){
+  if (!usingLiveData()) return null;
+
+  const to = Math.floor(Date.now() / 1000);
+  const from = to - (CHART_CALENDAR_DAYS * 24 * 60 * 60);
+  const keys = loadSavedApiKeys();
+
+  for (const providerId of orderedProviderIds()){
+    try{
+      const result = await fetchYearHistoryFromProvider(ticker, providerId, keys[providerId], from, to);
+      if (result) return result;
+    } catch(err){
+      console.error("History fetch failed for", ticker, providerId, err);
+    }
+  }
+  return null;
+}
+
+async function ensureYearHistory(ticker){
+  const stock = stocks[ticker];
+  if (!stock || !usingLiveData() || stock.historyFetched) return;
+
+  const result = await fetchYearHistory(ticker);
+  if (result && result.series){
+    const series = result.series;
+    if (isValidPrice(stock.price)) series[series.length - 1] = stock.price;
+    stock.history = series;
+    stock.historyIsYear = true;
+    stock.historyProvider = result.providerId;
+    stock.historyFetched = true;
+  } else {
+    // No provider returned usable candles — keep the real day move only.
+    stock.historyIsYear = false;
+    stock.historyProvider = null;
+    stock.historyFetched = true;
+    if (isValidPrice(stock.price)){
+      stock.history = isValidPrice(stock.prevClose)
+        ? [stock.prevClose, stock.price]
+        : [stock.price, stock.price];
+    }
+  }
+}
+
+// Prefer the active provider, then fall back across any other saved keys.
 async function fetchQuote(ticker){
-  if (CONFIG.USE_MOCK_DATA || !CONFIG.API_KEY){
+  if (!usingLiveData()){
     return stepMockStock(stocks[ticker]);
   }
-  const provider = PROVIDERS[CONFIG.PROVIDER];
-  try{
-    const res = await fetch(provider.buildUrl(ticker, CONFIG.API_KEY));
-    const data = await res.json();
-    const { price, prevClose } = provider.parse(data);
-    const stock = stocks[ticker];
-    if (typeof price === "number" && !isNaN(price)){
-      stock.price = price;
-      stock.prevClose = (typeof prevClose === "number" && !isNaN(prevClose)) ? prevClose : stock.prevClose;
-      stock.history.push(stock.price);
-      if (stock.history.length > 30) stock.history.shift();
+
+  const stock = stocks[ticker];
+  const keys = loadSavedApiKeys();
+
+  for (const providerId of orderedProviderIds()){
+    try{
+      const result = await fetchQuoteFromProvider(ticker, providerId, keys[providerId]);
+      if (!result) continue;
+
+      stock.price = result.price;
+      if (isValidPrice(result.prevClose)) stock.prevClose = result.prevClose;
+      stock.quoteProvider = result.providerId;
+
+      if (stock.historyFetched){
+        stock.history = sanitizeHistory(stock.history);
+        if (stock.history.length) stock.history[stock.history.length - 1] = result.price;
+      } else {
+        stock.history = isValidPrice(stock.prevClose)
+          ? [stock.prevClose, result.price]
+          : [result.price, result.price];
+      }
+      return stock;
+    } catch(err){
+      console.error("Live fetch failed for", ticker, providerId, err);
     }
-    return stock;
-  } catch(err){
-    console.error("Live fetch failed for", ticker, err);
-    return stocks[ticker]; // fall back to last known value
   }
+
+  return stock; // leave last known value if every provider failed
 }
 
 function initStocks(){
   CONFIG.COMPANIES.forEach(c => {
-    stocks[c.ticker] = { name: c.name, ...seedMockStock(c.ticker) };
+    stocks[c.ticker] = { name: c.name, ...seedStock() };
   });
 }
 
@@ -785,6 +1043,92 @@ async function refreshAllQuotes(){
   await Promise.all(CONFIG.COMPANIES.map(c => fetchQuote(c.ticker)));
   renderWatchlist();
   renderSpotlight(); // keep spotlight numbers current between rotations
+}
+
+async function loadVisibleHistory(){
+  if (CONFIG.COMPANIES.length === 0) return;
+  const ticker = CONFIG.COMPANIES[spotlightIndex].ticker;
+  await Promise.all([ensureYearHistory(ticker), ensureCompanyNews(ticker)]);
+  renderSpotlight();
+  renderCrawl();
+}
+
+async function loadAllHistories(){
+  if (!usingLiveData()) return;
+  await Promise.all(CONFIG.COMPANIES.map(c => ensureYearHistory(c.ticker)));
+  renderWatchlist();
+  renderSpotlight();
+}
+
+function escapeHtml(str){
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+const HEADLINES_PER_COMPANY = 4;
+
+function articlesForTicker(ticker){
+  const live = companyNews[ticker];
+  if (Array.isArray(live) && live.length > 0){
+    return live.slice(0, HEADLINES_PER_COMPANY);
+  }
+  const fallback = MOCK_HEADLINES[ticker];
+  if (!fallback) return [];
+  return [{
+    title: fallback,
+    url: null,
+    source: usingLiveData() ? "No live article" : "Demo",
+  }];
+}
+
+async function fetchNewsFromProvider(ticker, providerId, key){
+  const provider = PROVIDERS[providerId];
+  if (!provider || !provider.buildNewsUrl || !provider.parseNews || !key) return null;
+  const res = await fetch(provider.buildNewsUrl(ticker, key));
+  const data = await res.json();
+  if (data && (data.error || data.Note || data["Error Message"] || data["Information"] || data.status === "error")){
+    return null;
+  }
+  const articles = provider.parseNews(data);
+  if (!Array.isArray(articles) || articles.length === 0) return null;
+  return articles.slice(0, 8).map((a) => ({
+    title: a.title,
+    url: a.url,
+    source: a.source || PROVIDERS[providerId].label,
+  }));
+}
+
+async function ensureCompanyNews(ticker){
+  if (!usingLiveData()) return;
+  if (Array.isArray(companyNews[ticker]) && companyNews[ticker].length) return;
+
+  const keys = loadSavedApiKeys();
+  for (const providerId of orderedProviderIds()){
+    try{
+      const articles = await fetchNewsFromProvider(ticker, providerId, keys[providerId]);
+      if (articles && articles.length){
+        companyNews[ticker] = articles;
+        return;
+      }
+    } catch(err){
+      console.error("News fetch failed for", ticker, providerId, err);
+    }
+  }
+  companyNews[ticker] = [];
+}
+
+async function loadAllNews(){
+  if (!usingLiveData()){
+    renderCrawl();
+    renderSpotlight();
+    return;
+  }
+  await Promise.all(CONFIG.COMPANIES.map((c) => ensureCompanyNews(c.ticker)));
+  renderCrawl();
+  renderSpotlight();
 }
 
 /* ================================================================
@@ -815,6 +1159,9 @@ function renderClock(){
 
 function buildSparkline(history){
   const w = 600, h = 120, pad = 6;
+  if (!history || history.length < 2){
+    return `<polyline points="${pad},${h / 2} ${w - pad},${h / 2}" style="stroke:var(--text-dim)" />`;
+  }
   const min = Math.min(...history);
   const max = Math.max(...history);
   const range = (max - min) || 1;
@@ -836,20 +1183,58 @@ function renderSpotlight(){
   if (CONFIG.COMPANIES.length === 0) return;
   const ticker = CONFIG.COMPANIES[spotlightIndex].ticker;
   const stock = stocks[ticker];
-  const change = stock.price - stock.prevClose;
-  const pct = (change / stock.prevClose) * 100;
-  const up = change >= 0;
+  const ready = isValidPrice(stock.price) && isValidPrice(stock.prevClose);
 
   document.getElementById("spTicker").textContent = ticker;
   document.getElementById("spName").textContent = stock.name;
-  document.getElementById("spPrice").textContent = `$${stock.price.toFixed(2)}`;
+  document.getElementById("spPrice").textContent = ready ? `$${stock.price.toFixed(2)}` : "—";
 
   const deltaEl = document.getElementById("spDelta");
-  deltaEl.textContent = `${up ? "+" : ""}${change.toFixed(2)} (${up ? "+" : ""}${pct.toFixed(2)}%)`;
-  deltaEl.className = `delta ${up ? "up" : "down"}`;
+  if (ready){
+    const change = stock.price - stock.prevClose;
+    const pct = (change / stock.prevClose) * 100;
+    const up = change >= 0;
+    deltaEl.textContent = `${up ? "+" : ""}${change.toFixed(2)} (${up ? "+" : ""}${pct.toFixed(2)}%)`;
+    deltaEl.className = `delta ${up ? "up" : "down"}`;
+  } else {
+    deltaEl.textContent = "Loading…";
+    deltaEl.className = "delta";
+  }
 
-  document.getElementById("spSpark").innerHTML = buildSparkline(stock.history);
-  document.getElementById("spHeadline").textContent = MOCK_HEADLINES[ticker] || "No headline available";
+  document.getElementById("spSpark").innerHTML = buildSparkline(chartHistory(stock));
+  const chartLabel = document.getElementById("chartLabel");
+  if (chartLabel){
+    if (!usingLiveData()){
+      chartLabel.textContent = "1Y performance (demo)";
+    } else if (stock.historyIsYear){
+      const via = stock.historyProvider && PROVIDERS[stock.historyProvider]
+        ? PROVIDERS[stock.historyProvider].label
+        : null;
+      chartLabel.textContent = via ? `1Y performance · ${via}` : "1Y performance";
+    } else {
+      chartLabel.textContent = "Today";
+    }
+  }
+
+  const articles = articlesForTicker(ticker);
+  const listEl = document.getElementById("spHeadlineList");
+  if (!articles.length){
+    listEl.innerHTML = `<li><span class="headline-text">No headlines available</span></li>`;
+  } else {
+    listEl.innerHTML = articles.map((article) => {
+      const source = escapeHtml(article.source || "");
+      if (article.url){
+        return `<li>
+          <a class="headline-link" href="${escapeHtml(article.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(article.title)}</a>
+          <span class="headline-source">${source}</span>
+        </li>`;
+      }
+      return `<li>
+        <span class="headline-text">${escapeHtml(article.title)}</span>
+        <span class="headline-source">${source}</span>
+      </li>`;
+    }).join("");
+  }
 }
 
 function renderRotationDots(){
@@ -879,6 +1264,7 @@ function rotateSpotlight(){
   renderRotationDots();
   animateActiveDot();
   highlightActiveWatchlistRow();
+  loadVisibleHistory();
 }
 
 /* ================================================================
@@ -889,6 +1275,16 @@ function renderWatchlist(){
   const container = document.getElementById("watchlistRows");
   container.innerHTML = CONFIG.COMPANIES.map((c, i) => {
     const stock = stocks[c.ticker];
+    const ready = isValidPrice(stock.price) && isValidPrice(stock.prevClose);
+    if (!ready){
+      return `
+        <div class="wl-row ${i === spotlightIndex ? "active-row" : ""}" data-i="${i}">
+          <div class="t">${c.ticker}</div>
+          <div class="n">${c.name}</div>
+          <div class="p">—</div>
+          <div class="c">…</div>
+        </div>`;
+    }
     const change = stock.price - stock.prevClose;
     const pct = (change / stock.prevClose) * 100;
     const up = change >= 0;
@@ -912,12 +1308,145 @@ function highlightActiveWatchlistRow(){
    RENDER: news crawl
    ================================================================ */
 
+const CRAWL_PX_PER_SEC = 52; // readable, but keeps the strip moving
+const CRAWL_STEP_PX = 280;
+const CRAWL_RESUME_MS = 900; // resume soon after the pointer leaves
+let crawlRaf = null;
+let crawlLastTs = 0;
+let crawlPaused = false;
+let crawlResumeTimer = null;
+let crawlDrag = null;
+let crawlHovering = false;
+
+function prefersReducedMotion(){
+  return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+function pauseCrawl(ms = CRAWL_RESUME_MS){
+  crawlPaused = true;
+  clearTimeout(crawlResumeTimer);
+  crawlResumeTimer = setTimeout(() => {
+    if (crawlHovering) return;
+    crawlPaused = false;
+    crawlLastTs = 0;
+  }, ms);
+}
+
+function resumeCrawlSoon(){
+  crawlHovering = false;
+  pauseCrawl(CRAWL_RESUME_MS);
+}
+
+function loopCrawlScroll(ts){
+  const viewport = document.getElementById("crawlViewport");
+  const track = document.getElementById("crawlTrack");
+  if (!viewport || !track){
+    crawlRaf = null;
+    return;
+  }
+
+  const loopWidth = track.scrollWidth / 2;
+  if (!crawlPaused && !prefersReducedMotion() && loopWidth > viewport.clientWidth){
+    if (!crawlLastTs) crawlLastTs = ts;
+    const dt = Math.min(48, ts - crawlLastTs) / 1000;
+    crawlLastTs = ts;
+    viewport.scrollLeft += CRAWL_PX_PER_SEC * dt;
+    if (viewport.scrollLeft >= loopWidth){
+      viewport.scrollLeft -= loopWidth;
+    }
+  } else {
+    crawlLastTs = 0;
+  }
+
+  crawlRaf = requestAnimationFrame(loopCrawlScroll);
+}
+
+function ensureCrawlTicker(){
+  if (crawlRaf) return;
+  crawlLastTs = 0;
+  crawlRaf = requestAnimationFrame(loopCrawlScroll);
+}
+
+function nudgeCrawl(dir){
+  const viewport = document.getElementById("crawlViewport");
+  if (!viewport) return;
+  pauseCrawl(CRAWL_RESUME_MS);
+  viewport.scrollBy({ left: dir * CRAWL_STEP_PX, behavior: "smooth" });
+}
+
+function bindCrawlControls(){
+  const crawl = document.getElementById("headlineCrawl");
+  const viewport = document.getElementById("crawlViewport");
+  const prev = document.getElementById("crawlPrev");
+  const next = document.getElementById("crawlNext");
+  if (!viewport || viewport.dataset.bound === "1") return;
+  viewport.dataset.bound = "1";
+
+  prev.addEventListener("click", () => nudgeCrawl(-1));
+  next.addEventListener("click", () => nudgeCrawl(1));
+
+  crawl.addEventListener("mouseenter", () => {
+    crawlHovering = true;
+    crawlPaused = true;
+    clearTimeout(crawlResumeTimer);
+  });
+  crawl.addEventListener("mouseleave", () => resumeCrawlSoon());
+
+  viewport.addEventListener("pointerdown", () => pauseCrawl(CRAWL_RESUME_MS));
+  viewport.addEventListener("wheel", () => pauseCrawl(CRAWL_RESUME_MS), { passive: true });
+  viewport.addEventListener("focusin", () => {
+    crawlHovering = true;
+    crawlPaused = true;
+    clearTimeout(crawlResumeTimer);
+  });
+  viewport.addEventListener("focusout", () => resumeCrawlSoon());
+
+  // Click-drag to scrub headlines manually (ignore pure link clicks).
+  viewport.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    if (e.target.closest("a")) return;
+    crawlDrag = {
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startScroll: viewport.scrollLeft,
+      moved: false,
+    };
+    viewport.setPointerCapture(e.pointerId);
+  });
+  viewport.addEventListener("pointermove", (e) => {
+    if (!crawlDrag || crawlDrag.pointerId !== e.pointerId) return;
+    const dx = e.clientX - crawlDrag.startX;
+    if (!crawlDrag.moved && Math.abs(dx) < 4) return;
+    crawlDrag.moved = true;
+    viewport.scrollLeft = crawlDrag.startScroll - dx;
+    pauseCrawl(CRAWL_RESUME_MS);
+  });
+  const endDrag = (e) => {
+    if (!crawlDrag || crawlDrag.pointerId !== e.pointerId) return;
+    crawlDrag = null;
+  };
+  viewport.addEventListener("pointerup", endDrag);
+  viewport.addEventListener("pointercancel", endDrag);
+}
+
 function renderCrawl(){
-  const items = CONFIG.COMPANIES.map(c =>
-    `<span><b>${c.ticker}</b> — ${MOCK_HEADLINES[c.ticker] || ""}</span>`
-  ).join("");
-  // duplicate content so the loop has no visible gap
+  const pieces = [];
+  CONFIG.COMPANIES.forEach((c) => {
+    articlesForTicker(c.ticker).forEach((article) => {
+      const body = `<b>${escapeHtml(c.ticker)}</b> — ${escapeHtml(article.title)}`;
+      if (article.url){
+        pieces.push(`<a href="${escapeHtml(article.url)}" target="_blank" rel="noopener noreferrer">${body}</a>`);
+      } else {
+        pieces.push(`<span>${body}</span>`);
+      }
+    });
+  });
+
+  const items = pieces.join("") || "<span>Add companies to load headlines</span>";
+  // duplicate content so the auto-scroll loop has no visible gap
   document.getElementById("crawlTrack").innerHTML = items + items;
+  bindCrawlControls();
+  ensureCrawlTicker();
 }
 
 /* ================================================================
@@ -949,7 +1478,7 @@ function addCompany(){
   const tickerInput = document.getElementById("newTicker");
   const nameInput = document.getElementById("newName");
   const ticker = tickerInput.value.trim().toUpperCase();
-  const name = nameInput.value.trim() || ticker;
+  const name = (nameInput.value.trim() || ticker).slice(0, 30);
 
   if (!ticker) return;
   if (CONFIG.COMPANIES.some(c => c.ticker === ticker)){
@@ -958,7 +1487,7 @@ function addCompany(){
   }
 
   CONFIG.COMPANIES.push({ ticker, name });
-  stocks[ticker] = { name, ...seedMockStock(ticker) };
+  stocks[ticker] = { name, ...seedStock() };
   if (!MOCK_HEADLINES[ticker]) MOCK_HEADLINES[ticker] = "Watching for updates on this company";
 
   tickerInput.value = "";
@@ -966,6 +1495,11 @@ function addCompany(){
 
   saveWatchlist();
   refreshAfterListChange();
+  if (usingLiveData()){
+    fetchQuote(ticker)
+      .then(() => Promise.all([ensureYearHistory(ticker), ensureCompanyNews(ticker)]))
+      .then(() => refreshAfterListChange());
+  }
 }
 
 function removeCompany(index){
@@ -995,7 +1529,8 @@ function refreshAfterListChange(){
     document.getElementById("spPrice").textContent = "$0.00";
     document.getElementById("spDelta").textContent = "";
     document.getElementById("spSpark").innerHTML = "";
-    document.getElementById("spHeadline").textContent = "Add a company to get started";
+    document.getElementById("spHeadlineList").innerHTML =
+      `<li><span class="headline-text">Add a company to get started</span></li>`;
   }
 }
 
@@ -1034,6 +1569,9 @@ function boot(){
   renderWatchlist();
   renderCrawl();
   animateActiveDot();
+
+  // Quotes first, then real 1Y histories + articles.
+  refreshAllQuotes().then(() => Promise.all([loadAllHistories(), loadAllNews()]));
 
   setInterval(renderClock, 1000);
   setInterval(refreshAllQuotes, CONFIG.PRICE_REFRESH_MS);
