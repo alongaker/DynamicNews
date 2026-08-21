@@ -37,6 +37,25 @@ const PROVIDERS = {
           source: row.source || "Finnhub",
         }));
     },
+    buildEarningsUrl: (key, from, to) =>
+      `https://finnhub.io/api/v1/calendar/earnings?from=${from}&to=${to}&international=false&token=${key}`,
+    parseEarnings: (data) => {
+      const rows = data && data.earningsCalendar;
+      if (!Array.isArray(rows)) return null;
+      return rows
+        .filter((row) => row && row.symbol && row.date)
+        .map((row) => ({
+          symbol: String(row.symbol).toUpperCase(),
+          date: String(row.date).slice(0, 10),
+          hour: String(row.hour || "").toLowerCase(),
+          epsEstimate: row.epsEstimate,
+          epsActual: row.epsActual,
+          revenueEstimate: row.revenueEstimate,
+          revenueActual: row.revenueActual,
+          quarter: row.quarter,
+          year: row.year,
+        }));
+    },
   },
   alphavantage: {
     label: "Alpha Vantage",
@@ -71,6 +90,37 @@ const PROVIDERS = {
           url: row.url,
           source: (row.source && String(row.source)) || "Alpha Vantage",
         }));
+    },
+    buildEarningsUrl: (key) =>
+      `https://www.alphavantage.co/query?function=EARNINGS_CALENDAR&horizon=3month&apikey=${key}`,
+    parseEarningsCsv: (text) => {
+      const trimmed = String(text || "").trim();
+      if (!trimmed) return [];
+      if (trimmed.startsWith("{") || trimmed.startsWith("<")) return null;
+      const lines = trimmed.split(/\r?\n/).filter(Boolean);
+      if (lines.length < 2) return [];
+      const header = lines[0].split(",").map((h) => h.trim().toLowerCase());
+      const col = (name) => header.indexOf(name);
+      const symbolI = col("symbol");
+      const nameI = col("name");
+      const dateI = col("reportdate");
+      const epsI = col("estimate");
+      if (symbolI < 0 || dateI < 0) return null;
+      return lines.slice(1).map((line) => {
+        const parts = line.split(",");
+        return {
+          symbol: String(parts[symbolI] || "").trim().toUpperCase(),
+          name: nameI >= 0 ? String(parts[nameI] || "").trim() : "",
+          date: String(parts[dateI] || "").trim().slice(0, 10),
+          hour: "",
+          epsEstimate: epsI >= 0 ? parts[epsI] : null,
+          epsActual: null,
+          revenueEstimate: null,
+          revenueActual: null,
+          quarter: null,
+          year: null,
+        };
+      }).filter((row) => row.symbol && row.date);
     },
   },
   twelvedata: {

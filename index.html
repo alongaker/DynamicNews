@@ -98,6 +98,34 @@ header{
   color:var(--text-dim);
   text-transform:uppercase;
 }
+.header-left{
+  display:flex;
+  align-items:center;
+  gap:36px;
+  min-width:0;
+}
+.page-tabs{
+  display:flex;
+  gap:4px;
+}
+.page-tab{
+  font-family:'Barlow Condensed', sans-serif;
+  font-weight:600;
+  font-size:15px;
+  letter-spacing:1.2px;
+  text-transform:uppercase;
+  text-decoration:none;
+  color:var(--text-dim);
+  padding:8px 14px;
+  border-radius:6px;
+  border:1px solid transparent;
+}
+.page-tab:hover{ color:var(--text); }
+.page-tab.active{
+  color:var(--amber);
+  border-color:rgba(242,169,59,0.35);
+  background:rgba(242,169,59,0.08);
+}
 .header-right{
   display:flex;
   align-items:center;
@@ -868,6 +896,10 @@ main{
   .positions{ max-height:30vh; }
   .watchlist-rows{ max-height:35vh; }
   .side-drawer{ width:85vw; }
+  header{ padding:0 16px; }
+  .header-left{ gap:16px; }
+  .page-tabs{ display:none; }
+  .brand-sub{ display:none; }
 }
 </style>
 </head>
@@ -882,9 +914,15 @@ main{
     </div>
 
     <header>
-      <div class="brand">
-        <div class="brand-mark">MARKET<span>BOARD</span></div>
-        <div class="brand-sub">Conference Room Feed</div>
+      <div class="header-left">
+        <div class="brand">
+          <div class="brand-mark">MARKET<span>BOARD</span></div>
+          <div class="brand-sub">Conference Room Feed</div>
+        </div>
+        <nav class="page-tabs" aria-label="Board sections">
+          <a class="page-tab active" href="index.html" aria-current="page">Board</a>
+          <a class="page-tab" href="earnings.html">Earnings</a>
+        </nav>
       </div>
       <div class="header-right">
         <div class="market-status">
@@ -965,6 +1003,10 @@ main{
     <span class="di-label">Edit Watchlist</span>
     <span class="di-sub">Add or remove companies from the board</span>
   </button>
+  <a class="drawer-item" href="earnings.html">
+    <span class="di-label">Earnings Calendar</span>
+    <span class="di-sub">This week’s reports, day by day</span>
+  </a>
   <a class="drawer-item" href="api-keys.html">
     <span class="di-label">API Key Management</span>
     <span class="di-sub">Connect a live data provider</span>
@@ -990,7 +1032,7 @@ main{
   </div>
 </div>
 
-<script src="providers.js"></script>
+<script src="providers.js?v=earnings2"></script>
 <script>
 /* ================================================================
    CONFIG

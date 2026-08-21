@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Earnings — Market Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+
+:root{
+  --bg:            #0B0E14;
+  --panel:         #12161F;
+  --panel-raised:  #171C27;
+  --hairline:      #232936;
+  --text:          #E8E6DF;
+  --text-dim:      #7C8494;
+  --amber:         #F2A93B;
+  --up:            #35C48F;
+  --down:          #E85C4A;
+}
+
+*{ margin:0; padding:0; box-sizing:border-box; }
+
+html,body{
+  width:100%; height:100%;
+  background:var(--bg);
+  color:var(--text);
+  font-family:'IBM Plex Mono', monospace;
+  overflow:hidden;
+}
+
+.shell{
+  display:grid;
+  grid-template-rows: auto 1fr;
+  width:100vw; height:100vh;
+}
+
+header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 32px;
+  height:84px;
+  background:var(--panel);
+  border-bottom:1px solid var(--hairline);
+}
+.header-left{
+  display:flex;
+  align-items:center;
+  gap:36px;
+  min-width:0;
+}
+.brand{
+  display:flex;
+  align-items:baseline;
+  gap:12px;
+}
+.brand-mark{
+  font-family:'Barlow Condensed', sans-serif;
+  font-weight:700;
+  font-size:28px;
+  letter-spacing:0.5px;
+  color:var(--text);
+}
+.brand-mark span{ color:var(--amber); }
+.brand-sub{
+  font-size:11px;
+  letter-spacing:2px;
+  color:var(--text-dim);
+  text-transform:uppercase;
+}
+.page-tabs{
+  display:flex;
+  gap:4px;
+}
+.page-tab{
+  font-family:'Barlow Condensed', sans-serif;
+  font-weight:600;
+  font-size:15px;
+  letter-spacing:1.2px;
+  text-transform:uppercase;
+  text-decoration:none;
+  color:var(--text-dim);
+  padding:8px 14px;
+  border-radius:6px;
+  border:1px solid transparent;
+}
+.page-tab:hover{ color:var(--text); }
+.page-tab.active{
+  color:var(--amber);
+  border-color:rgba(242,169,59,0.35);
+  background:rgba(242,169,59,0.08);
+}
+.header-right{
+  display:flex;
+  align-items:center;
+  gap:28px;
+}
+.market-status{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:13px;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  color:var(--text-dim);
+}
+.status-dot{
+  width:8px; height:8px; border-radius:50%;
+  background:var(--up);
+  box-shadow:0 0 8px var(--up);
+}
+.status-dot.closed{
+  background:var(--down);
+  box-shadow:0 0 8px var(--down);
+}
+.clock{
+  font-size:22px;
+  font-weight:500;
+  letter-spacing:1px;
+  min-width:230px;
+  text-align:right;
+}
+.clock .date{
+  font-size:11px;
+  color:var(--text-dim);
+  letter-spacing:1.5px;
+  text-transform:uppercase;
+}
+.menu-btn{
+  background:none;
+  border:1px solid var(--hairline);
+  color:var(--text-dim);
+  width:36px; height:36px;
+  border-radius:6px;
+  font-size:16px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:border-color 0.2s ease, color 0.2s ease;
+}
+.menu-btn:hover{
+  border-color:var(--amber);
+  color:var(--amber);
+}
+
+.drawer-overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.5);
+  opacity:0;
+  pointer-events:none;
+  transition:opacity 0.25s ease;
+  z-index:60;
+}
+.drawer-overlay.open{
+  opacity:1;
+  pointer-events:auto;
+}
+.side-drawer{
+  position:fixed;
+  top:0; right:0; bottom:0;
+  width:320px;
+  background:var(--panel);
+  border-left:1px solid var(--hairline);
+  transform:translateX(100%);
+  transition:transform 0.28s ease;
+  z-index:61;
+  display:flex;
+  flex-direction:column;
+  padding:24px 0;
+}
+.side-drawer.open{ transform:translateX(0); }
+.drawer-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 24px 20px;
+  border-bottom:1px solid var(--hairline);
+  margin-bottom:8px;
+}
+.drawer-title{
+  font-family:'Barlow Condensed', sans-serif;
+  font-weight:700;
+  font-size:14px;
+  letter-spacing:2px;
+  color:var(--text-dim);
+}
+.drawer-close{
+  background:none;
+  border:none;
+  color:var(--text-dim);
+  font-size:20px;
+  cursor:pointer;
+  line-height:1;
+}
+.drawer-close:hover{ color:var(--text); }
+.drawer-item{
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+  text-align:left;
+  text-decoration:none;
+  background:none;
+  border:none;
+  border-bottom:1px solid var(--hairline);
+  color:var(--text);
+  padding:18px 24px;
+  cursor:pointer;
+  transition:background 0.15s ease;
+}
+.drawer-item:hover{ background:var(--panel-raised); }
+.drawer-item .di-label{
+  font-family:'Barlow Condensed', sans-serif;
+  font-weight:600;
+  font-size:17px;
+}
+.drawer-item .di-sub{
+  font-size:12px;
+  color:var(--text-dim);
+}
+
+.page{
+  overflow-y:auto;
+  padding:36px 48px 64px;
+}
+.page-head{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:24px;
+  margin-bottom:28px;
+}
+.page-title{
+  font-family:'Barlow Condensed', sans-serif;
+  font-weight:700;
+  font-size:34px;
+}
+.page-sub{
+  color:var(--text-dim);
+  font-size:13px;
+  margin-top:6px;
+  max-width:62ch;
+  line-height:1.5;
+}
+.page-meta{
+  text-align:right;
+  font-size:12px;
+  color:var(--text-dim);
+  letter-spacing:0.4px;
+  white-space:nowrap;
+}
+
+.api-key-alert{
+  display:none;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  padding:14px 18px;
+  margin-bottom:24px;
+  background:rgba(242,169,59,0.12);
+  border:1px solid rgba(242,169,59,0.35);
+  border-radius:8px;
+  color:var(--text);
+  font-size:13px;
+  line-height:1.4;
+}
+.api-key-alert.visible{ display:flex; }
+.api-key-alert a{
+  color:var(--amber);
+  font-weight:600;
+  text-decoration:none;
+  border-bottom:1px dotted var(--amber);
+  white-space:nowrap;
+}
+
+.week{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  max-width:980px;
+}
+
+.day{
+  background:var(--panel);
+  border:1px solid var(--hairline);
+  border-radius:10px;
+  overflow:hidden;
+}
+.day.is-today{
+  border-color:rgba(242,169,59,0.4);
+}
+.day-toggle{
+  width:100%;
+  display:grid;
+  grid-template-columns: 1fr auto auto;
+  align-items:center;
+  gap:16px;
+  padding:18px 22px;
+  background:none;
+  border:none;
+  color:var(--text);
+  cursor:pointer;
+  text-align:left;
+}
+.day-toggle:hover{ background:var(--panel-raised); }
+.day-name{
+  font-family:'Barlow Condensed', sans-serif;
+  font-weight:700;
+  font-size:24px;
+  letter-spacing:0.3px;
+  min-width:0;
+}
+.day-count{
+  font-size:12px;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  color:var(--text-dim);
+  white-space:nowrap;
+}
+.day.is-today .day-name{ color:var(--amber); }
+.today-badge{
+  display:inline-block;
+  margin-left:10px;
+  font-size:10px;
+  letter-spacing:1.4px;
+  color:var(--amber);
+  border:1px solid rgba(242,169,59,0.35);
+  padding:2px 7px;
+  border-radius:999px;
+  vertical-align:middle;
+}
+.day-chevron{
+  width:22px;
+  color:var(--text-dim);
+  font-size:18px;
+  transition:transform 0.22s ease;
+}
+.day.open .day-chevron{ transform:rotate(180deg); color:var(--amber); }
+
+.day-body{
+  display:grid;
+  grid-template-rows: 0fr;
+  transition:grid-template-rows 0.28s ease;
+}
+.day.open .day-body{ grid-template-rows: 1fr; }
+.day-body-inner{
+  overflow:hidden;
+}
+.day-list{
+  border-top:1px solid var(--hairline);
+  max-height:52vh;
+  overflow-y:auto;
+}
+.call-row{
+  display:grid;
+  grid-template-columns: minmax(0, 1fr) 150px 130px;
+  gap:16px;
+  align-items:center;
+  padding:14px 22px;
+  border-bottom:1px solid var(--hairline);
+  font-size:16px;
+}
+.call-row:last-child{ border-bottom:none; }
+.call-row.watched{
+  background:rgba(242,169,59,0.06);
+}
+.call-id{
+  display:flex;
+  align-items:baseline;
+  gap:12px;
+  min-width:0;
+}
+.call-row .t{
+  font-weight:600;
+  font-size:18px;
+  letter-spacing:0.4px;
+  flex:0 0 auto;
+}
+.call-row .n{
+  font-family:'Barlow Condensed', sans-serif;
+  font-weight:500;
+  font-size:18px;
+  color:var(--text);
+  opacity:0.78;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  min-width:0;
+}
+.call-row .when{
+  color:var(--text-dim);
+  font-size:15px;
+  white-space:nowrap;
+}
+.call-row .eps{
+  text-align:right;
+  color:var(--text-dim);
+  font-size:15px;
+  white-space:nowrap;
+}
+.call-row .eps b{ color:var(--text); font-weight:500; }
+.hold-badge,
+.watch-badge{
+  display:inline-block;
+  margin-left:8px;
+  font-size:10px;
+  letter-spacing:1px;
+  padding:1px 6px;
+  border-radius:999px;
+  vertical-align:middle;
+}
+.hold-badge{
+  color:var(--amber);
+  border:1px solid rgba(242,169,59,0.35);
+}
+.watch-badge{
+  color:var(--text-dim);
+  border:1px solid var(--hairline);
+}
+.empty-day,
+.status-line{
+  padding:18px 22px;
+  color:var(--text-dim);
+  font-size:13px;
+  border-top:1px solid var(--hairline);
+}
+
+@media (prefers-reduced-motion: reduce){
+  .day-body, .day-chevron{ transition:none; }
+}
+
+@media (max-width:900px){
+  header{ padding:0 16px; }
+  .header-left{ gap:16px; }
+  .page-tabs{ display:none; }
+  .brand-sub, .clock, .market-status{ display:none; }
+  .page{ padding:24px 16px 48px; }
+  .page-head{ flex-direction:column; align-items:flex-start; }
+  .page-meta{ text-align:left; }
+  .day-toggle{ grid-template-columns: 1fr auto; }
+  .day-count{ display:none; }
+  .call-row{ grid-template-columns: 1fr; }
+  .call-row .when, .call-row .eps{ justify-self:start; }
+  .side-drawer{ width:85vw; }
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <header>
+    <div class="header-left">
+      <div class="brand">
+        <div class="brand-mark">MARKET<span>BOARD</span></div>
+        <div class="brand-sub">Earnings Week</div>
+      </div>
+      <nav class="page-tabs" aria-label="Board sections">
+        <a class="page-tab" href="index.html">Board</a>
+        <a class="page-tab active" href="earnings.html" aria-current="page">Earnings</a>
+      </nav>
+    </div>
+    <div class="header-right">
+      <div class="market-status">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusText">Market Open</span>
+      </div>
+      <div class="clock">
+        <div id="clockTime">--:--:--</div>
+        <div class="date" id="clockDate">--</div>
+      </div>
+      <button class="menu-btn" id="menuBtn" title="Menu">&#9776;</button>
+    </div>
+  </header>
+
+  <div class="page">
+    <div class="page-head">
+      <div>
+        <div class="page-title">Earnings this week</div>
+        <div class="page-sub" id="pageSub">Report dates from Finnhub — before open / after close, not webcast times.</div>
+      </div>
+      <div class="page-meta" id="pageMeta"></div>
+    </div>
+
+    <div class="api-key-alert" id="apiKeyAlert">
+      <span>Earnings calendar needs a Finnhub API key.</span>
+      <a href="api-keys.html">Add a Finnhub key →</a>
+    </div>
+
+    <div class="week" id="weekList"></div>
+  </div>
+</div>
+
+<div class="drawer-overlay" id="drawerOverlay"></div>
+<nav class="side-drawer" id="sideDrawer">
+  <div class="drawer-head">
+    <div class="drawer-title">MENU</div>
+    <button class="drawer-close" id="drawerCloseBtn">&times;</button>
+  </div>
+  <a class="drawer-item" href="index.html">
+    <span class="di-label">Board</span>
+    <span class="di-sub">Live prices, charts, and headlines</span>
+  </a>
+  <a class="drawer-item" href="earnings.html" aria-current="page">
+    <span class="di-label">Earnings Calendar</span>
+    <span class="di-sub">This week’s reports, day by day</span>
+  </a>
+  <a class="drawer-item" href="api-keys.html">
+    <span class="di-label">API Key Management</span>
+    <span class="di-sub">Connect a live data provider</span>
+  </a>
+</nav>
+
+<script src="providers.js?v=earnings2"></script>
+<script>
+const WATCHLIST_STORAGE_KEY = "marketboard_watchlist";
+const DEFAULT_COMPANIES = [
+  { ticker: "ASTS", name: "AST SpaceMobile" },
+  { ticker: "JMIA", name: "Jumia" },
+  { ticker: "RVMD", name: "Revolution Medicines" },
+  { ticker: "CELC", name: "Celcuity" },
+];
+const HOUR_LABELS = {
+  bmo: "Before open",
+  amc: "After close",
+  dmh: "During hours",
+};
+const HOUR_RANK = { bmo: 0, dmh: 1, amc: 2 };
+
+function escapeHtml(value){
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function ymd(date){
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function addDays(date, count){
+  const next = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  next.setDate(next.getDate() + count);
+  return next;
+}
+
+function tradingWeekStart(now = new Date()){
+  const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const day = date.getDay();
+  if (day === 6) date.setDate(date.getDate() + 2);
+  else if (day === 0) date.setDate(date.getDate() + 1);
+  else date.setDate(date.getDate() - (day - 1));
+  return date;
+}
+
+function weekDays(){
+  const monday = tradingWeekStart();
+  return [0, 1, 2, 3, 4].map((offset) => addDays(monday, offset));
+}
+
+function loadWatchlist(){
+  try{
+    const saved = JSON.parse(localStorage.getItem(WATCHLIST_STORAGE_KEY));
+    if (Array.isArray(saved) && saved.length){
+      return saved
+        .map((c) => ({
+          ticker: String((c && c.ticker) || "").trim().toUpperCase(),
+          name: String((c && c.name) || "").trim(),
+          held: !!(c && c.holding && c.holding.held),
+        }))
+        .filter((c) => c.ticker);
+    }
+  } catch(err){}
+  return DEFAULT_COMPANIES.map((c) => ({ ticker: c.ticker, name: c.name, held: false }));
+}
+
+function finnhubKey(){
+  const keys = loadSavedApiKeys();
+  return (keys.finnhub && String(keys.finnhub).trim()) || "";
+}
+
+function clipName(name, max = 30){
+  const text = String(name || "").trim();
+  if (!text) return "";
+  if (text.length <= max) return text;
+  return text.slice(0, max).trimEnd();
+}
+
+function formatEps(value){
+  const n = Number(value);
+  if (!Number.isFinite(n)) return "—";
+  return n.toFixed(2);
+}
+
+function dayOrdinal(n){
+  const v = n % 100;
+  if (v >= 11 && v <= 13) return `${n}th`;
+  switch (n % 10){
+    case 1: return `${n}st`;
+    case 2: return `${n}nd`;
+    case 3: return `${n}rd`;
+    default: return `${n}th`;
+  }
+}
+
+function fullDateLabel(date){
+  const weekday = date.toLocaleDateString("en-US", { weekday: "long" });
+  const month = date.toLocaleDateString("en-US", { month: "long" });
+  return `${weekday}, ${month} ${dayOrdinal(date.getDate())}, ${date.getFullYear()}`;
+}
+
+function hourLabel(hour){
+  return HOUR_LABELS[hour] || "Time TBD";
+}
+
+function renderClock(){
+  const now = new Date();
+  document.getElementById("clockTime").textContent =
+    now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  document.getElementById("clockDate").textContent =
+    now.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" });
+
+  const day = now.getDay();
+  const minutes = now.getHours() * 60 + now.getMinutes();
+  const isOpen = day >= 1 && day <= 5 && minutes >= 9 * 60 + 30 && minutes < 16 * 60;
+  document.getElementById("statusText").textContent = isOpen ? "Market Open" : "Market Closed";
+  document.getElementById("statusDot").classList.toggle("closed", !isOpen);
+}
+
+function openDrawer(){
+  document.getElementById("sideDrawer").classList.add("open");
+  document.getElementById("drawerOverlay").classList.add("open");
+}
+function closeDrawer(){
+  document.getElementById("sideDrawer").classList.remove("open");
+  document.getElementById("drawerOverlay").classList.remove("open");
+}
+
+function compareCalls(a, b){
+  if (a.priority !== b.priority) return a.priority - b.priority;
+  const hourA = HOUR_RANK[a.hour] ?? 9;
+  const hourB = HOUR_RANK[b.hour] ?? 9;
+  if (hourA !== hourB) return hourA - hourB;
+  return a.symbol.localeCompare(b.symbol);
+}
+
+function lookupCompanyName(symbol, watchByTicker, row, symbolNames){
+  const watch = watchByTicker[symbol];
+  if (watch && watch.name) return watch.name;
+  if (row && row.name) return row.name;
+  if (!symbolNames) return "";
+  const variants = [symbol, symbol.replace(/-/g, "."), symbol.replace(/\./g, "-")];
+  for (const key of variants){
+    if (symbolNames[key]) return symbolNames[key];
+  }
+  return "";
+}
+
+function decorateCall(row, watchByTicker, symbolNames){
+  const watch = watchByTicker[row.symbol];
+  return {
+    ...row,
+    name: clipName(lookupCompanyName(row.symbol, watchByTicker, row, symbolNames)),
+    held: !!(watch && watch.held),
+    watched: !!watch,
+    priority: watch ? (watch.held ? 0 : 1) : 2,
+  };
+}
+
+function calendarErrorMessage(err, status){
+  const msg = String((err && err.message) || err || "");
+  const lower = msg.toLowerCase();
+  if (status === 429 || lower.includes("limit reached") || lower.includes("too many")){
+    return "Finnhub hit its free rate limit (60 calls/minute). Wait about a minute, then refresh.";
+  }
+  if (status === 401 || lower.includes("invalid api key")){
+    return "Finnhub says this API key isn’t valid. Re-save it under Finnhub on the API Key page.";
+  }
+  if (status === 403 || lower.includes("don't have access") || lower.includes("access to this resource")){
+    return "This Finnhub key doesn’t include the earnings calendar (or the date range is outside the free 1-month window).";
+  }
+  return msg ? `Couldn’t load the calendar: ${msg}` : "Couldn’t load the calendar. Check the Finnhub key and try again.";
+}
+
+async function readJsonOrText(res){
+  const text = await res.text();
+  try{
+    return { data: JSON.parse(text), text };
+  } catch(err){
+    return { data: null, text };
+  }
+}
+
+const TICKER_NAME_URLS = [
+  "https://cdn.jsdelivr.net/gh/rreichel3/US-Stock-Symbols@main/nasdaq/nasdaq_full_tickers.json",
+  "https://cdn.jsdelivr.net/gh/rreichel3/US-Stock-Symbols@main/nyse/nyse_full_tickers.json",
+  "https://cdn.jsdelivr.net/gh/rreichel3/US-Stock-Symbols@main/amex/amex_full_tickers.json",
+];
+
+let symbolNameCache = null;
+let symbolNamePromise = null;
+
+function addSymbolName(map, symbol, name){
+  const sym = String(symbol || "").trim().toUpperCase();
+  const company = String(name || "").trim();
+  if (!sym || !company || map[sym]) return;
+  map[sym] = company;
+}
+
+async function fetchJsonArray(url){
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  return Array.isArray(data) ? data : [];
+}
+
+async function fetchFinnhubSymbolNames(key){
+  const res = await fetch(`https://finnhub.io/api/v1/stock/symbol?exchange=US&token=${encodeURIComponent(key)}`);
+  const data = await res.json();
+  return Array.isArray(data) ? data : [];
+}
+
+async function loadSymbolNames(finnhubKey){
+  if (symbolNameCache) return symbolNameCache;
+  if (symbolNamePromise) return symbolNamePromise;
+
+  symbolNamePromise = (async () => {
+    const map = {};
+    const jobs = TICKER_NAME_URLS.map((url) => fetchJsonArray(url));
+    if (finnhubKey) jobs.push(fetchFinnhubSymbolNames(finnhubKey));
+
+    const results = await Promise.allSettled(jobs);
+    results.forEach((result) => {
+      if (result.status !== "fulfilled") return;
+      result.value.forEach((row) => {
+        if (!row || typeof row !== "object") return;
+        addSymbolName(map, row.symbol || row.displaySymbol, row.name || row.description);
+      });
+    });
+    symbolNameCache = map;
+    return map;
+  })();
+
+  return symbolNamePromise;
+}
+
+async function fetchFinnhubCalendar(key, from, to){
+  const buildUrl = (PROVIDERS.finnhub && PROVIDERS.finnhub.buildEarningsUrl)
+    || ((k, start, end) => `https://finnhub.io/api/v1/calendar/earnings?from=${start}&to=${end}&international=false&token=${k}`);
+  const url = buildUrl(key, from, to);
+  const res = await fetch(url);
+  const { data, text } = await readJsonOrText(res);
+  if (data && data.error){
+    const err = new Error(String(data.error));
+    err.status = res.status;
+    throw err;
+  }
+  if (!res.ok){
+    const err = new Error(text.slice(0, 180) || `HTTP ${res.status}`);
+    err.status = res.status;
+    throw err;
+  }
+  const parse = (PROVIDERS.finnhub && PROVIDERS.finnhub.parseEarnings) || ((data) => {
+    const rows = data && data.earningsCalendar;
+    if (!Array.isArray(rows)) return null;
+    return rows
+      .filter((row) => row && row.symbol && row.date)
+      .map((row) => ({
+        symbol: String(row.symbol).toUpperCase(),
+        date: String(row.date).slice(0, 10),
+        hour: String(row.hour || "").toLowerCase(),
+        epsEstimate: row.epsEstimate,
+        epsActual: row.epsActual,
+      }));
+  });
+  const parsed = parse(data);
+  if (!parsed){
+    const err = new Error("Finnhub returned an unexpected calendar response.");
+    err.status = res.status;
+    throw err;
+  }
+  return parsed;
+}
+
+async function fetchAlphaVantageCalendar(key, from, to){
+  const buildUrl = (PROVIDERS.alphavantage && PROVIDERS.alphavantage.buildEarningsUrl)
+    || ((k) => `https://www.alphavantage.co/query?function=EARNINGS_CALENDAR&horizon=3month&apikey=${k}`);
+  const url = buildUrl(key);
+  const res = await fetch(url);
+  const text = await res.text();
+  if (text.trim().startsWith("{")){
+    let data = {};
+    try{ data = JSON.parse(text); } catch(err){}
+    const msg = data.Note || data.Information || data["Error Message"] || data.error || "Alpha Vantage request failed.";
+    const err = new Error(String(msg));
+    err.status = res.status;
+    throw err;
+  }
+  const parseCsv = (PROVIDERS.alphavantage && PROVIDERS.alphavantage.parseEarningsCsv) || ((raw) => {
+    const trimmed = String(raw || "").trim();
+    if (!trimmed || trimmed.startsWith("{") || trimmed.startsWith("<")) return null;
+    const lines = trimmed.split(/\r?\n/).filter(Boolean);
+    if (lines.length < 2) return [];
+    const header = lines[0].split(",").map((h) => h.trim().toLowerCase());
+    const symbolI = header.indexOf("symbol");
+    const nameI = header.indexOf("name");
+    const dateI = header.indexOf("reportdate");
+    const epsI = header.indexOf("estimate");
+    if (symbolI < 0 || dateI < 0) return null;
+    return lines.slice(1).map((line) => {
+      const parts = line.split(",");
+      return {
+        symbol: String(parts[symbolI] || "").trim().toUpperCase(),
+        name: nameI >= 0 ? String(parts[nameI] || "").trim() : "",
+        date: String(parts[dateI] || "").trim().slice(0, 10),
+        hour: "",
+        epsEstimate: epsI >= 0 ? parts[epsI] : null,
+      };
+    }).filter((row) => row.symbol && row.date);
+  });
+  const parsed = parseCsv(text);
+  if (!parsed){
+    throw new Error("Alpha Vantage returned an unexpected calendar response.");
+  }
+  return parsed.filter((row) => row.date >= from && row.date <= to);
+}
+
+function callRowHtml(row){
+  const badge = row.held
+    ? `<span class="hold-badge">HOLD</span>`
+    : (row.watched ? `<span class="watch-badge">WATCH</span>` : "");
+  const name = row.name ? `<span class="n">${escapeHtml(row.name)}</span>` : "";
+  return `
+    <div class="call-row ${row.watched ? "watched" : ""}">
+      <div class="call-id">
+        <span class="t">${escapeHtml(row.symbol)}</span>${badge}${name}
+      </div>
+      <div class="when">${hourLabel(row.hour)}</div>
+      <div class="eps">Est. EPS <b>${formatEps(row.epsEstimate)}</b></div>
+    </div>`;
+}
+
+function renderWeek(days, grouped, openDate){
+  const today = ymd(new Date());
+  const weekEl = document.getElementById("weekList");
+  weekEl.innerHTML = days.map((date) => {
+    const key = ymd(date);
+    const rows = grouped[key] || [];
+    const isToday = key === today;
+    const isOpen = key === openDate;
+    const label = fullDateLabel(date);
+    const count = rows.length === 1 ? "1 report" : `${rows.length} reports`;
+    const body = rows.length
+      ? `<div class="day-list">${rows.map(callRowHtml).join("")}</div>`
+      : `<div class="empty-day">No reports on the calendar.</div>`;
+    return `
+      <section class="day ${isOpen ? "open" : ""} ${isToday ? "is-today" : ""}" data-date="${key}">
+        <button class="day-toggle" type="button" aria-expanded="${isOpen ? "true" : "false"}">
+          <div class="day-name">${escapeHtml(label)}${isToday ? `<span class="today-badge">Today</span>` : ""}</div>
+          <div class="day-count">${count}</div>
+          <div class="day-chevron" aria-hidden="true">▾</div>
+        </button>
+        <div class="day-body">
+          <div class="day-body-inner">${body}</div>
+        </div>
+      </section>`;
+  }).join("");
+
+  weekEl.querySelectorAll(".day-toggle").forEach((btn) => {
+    btn.addEventListener("click", () => toggleDay(btn.closest(".day")));
+  });
+
+  const openEl = weekEl.querySelector(`.day[data-date="${openDate}"]`);
+  if (openEl){
+    requestAnimationFrame(() => {
+      openEl.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+}
+
+function toggleDay(dayEl){
+  const wasOpen = dayEl.classList.contains("open");
+  document.querySelectorAll(".day").forEach((el) => {
+    el.classList.remove("open");
+    const toggle = el.querySelector(".day-toggle");
+    if (toggle) toggle.setAttribute("aria-expanded", "false");
+  });
+  if (!wasOpen){
+    dayEl.classList.add("open");
+    const toggle = dayEl.querySelector(".day-toggle");
+    if (toggle) toggle.setAttribute("aria-expanded", "true");
+    dayEl.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
+async function loadCalendar(){
+  const days = weekDays();
+  const from = ymd(days[0]);
+  const to = ymd(days[days.length - 1]);
+  const today = ymd(new Date());
+  const defaultOpen = days.some((d) => ymd(d) === today) ? today : from;
+  const watchlist = loadWatchlist();
+  const watchByTicker = Object.fromEntries(watchlist.map((c) => [c.ticker, c]));
+  const key = finnhubKey();
+  const alertEl = document.getElementById("apiKeyAlert");
+  const meta = document.getElementById("pageMeta");
+  const rangeLabel = `${days[0].toLocaleDateString([], { month: "short", day: "numeric" })} – ${days[4].toLocaleDateString([], { month: "short", day: "numeric" })}`;
+
+  document.getElementById("pageSub").textContent =
+    `${rangeLabel}. Finnhub report dates (before open / after close), not webcast times. Watchlist names stay pinned at the top of each day.`;
+
+  const avKey = (loadSavedApiKeys().alphavantage || "").trim();
+
+  if (!key && !avKey){
+    alertEl.classList.add("visible");
+    meta.textContent = "";
+    renderWeek(days, {}, defaultOpen);
+    return;
+  }
+  alertEl.classList.remove("visible");
+
+  document.getElementById("weekList").innerHTML = `<div class="status-line">Loading this week’s calendar…</div>`;
+
+  let parsed = null;
+  let source = "Finnhub";
+  let lastErr = null;
+
+  const namesPromise = loadSymbolNames(key);
+
+  if (key){
+    try{
+      parsed = await fetchFinnhubCalendar(key, from, to);
+    } catch(err){
+      lastErr = err;
+      console.error("Finnhub earnings calendar failed", err);
+    }
+  }
+
+  if (!parsed && avKey){
+    try{
+      parsed = await fetchAlphaVantageCalendar(avKey, from, to);
+      source = "Alpha Vantage";
+      lastErr = null;
+    } catch(avErr){
+      console.error("Alpha Vantage earnings calendar failed", avErr);
+      if (!lastErr) lastErr = avErr;
+    }
+  }
+
+  if (!parsed){
+    meta.textContent = "";
+    document.getElementById("weekList").innerHTML =
+      `<div class="status-line">${escapeHtml(calendarErrorMessage(lastErr, lastErr && lastErr.status))}</div>`;
+    return;
+  }
+
+  const symbolNames = await namesPromise;
+  const grouped = {};
+  days.forEach((d) => { grouped[ymd(d)] = []; });
+  parsed.forEach((row) => {
+    if (!grouped[row.date]) return;
+    grouped[row.date].push(decorateCall(row, watchByTicker, symbolNames));
+  });
+  Object.keys(grouped).forEach((date) => grouped[date].sort(compareCalls));
+
+  const total = parsed.filter((row) => grouped[row.date]).length;
+  meta.textContent = `${total} reports · via ${source}`;
+  renderWeek(days, grouped, defaultOpen);
+}
+
+function boot(){
+  renderClock();
+  setInterval(renderClock, 1000);
+  document.getElementById("menuBtn").addEventListener("click", openDrawer);
+  document.getElementById("drawerCloseBtn").addEventListener("click", closeDrawer);
+  document.getElementById("drawerOverlay").addEventListener("click", closeDrawer);
+  loadCalendar();
+}
+
+boot();
+</script>
+</body>
+</html>
