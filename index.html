@@ -37,9 +37,38 @@ html,body{
 /* ---------- layout shell ---------- */
 .board{
   display:grid;
-  grid-template-rows: 84px 1fr 56px;
+  grid-template-rows: auto 1fr 56px;
   width:100vw; height:100vh;
 }
+.board-top{
+  display:flex;
+  flex-direction:column;
+  min-height:84px;
+  background:var(--panel);
+  border-bottom:1px solid var(--hairline);
+}
+
+.api-key-alert{
+  display:none;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  padding:12px 24px;
+  background:rgba(242,169,59,0.12);
+  border-bottom:1px solid rgba(242,169,59,0.35);
+  color:var(--text);
+  font-size:13px;
+  line-height:1.4;
+}
+.api-key-alert.visible{ display:flex; }
+.api-key-alert a{
+  color:var(--amber);
+  font-weight:600;
+  text-decoration:none;
+  border-bottom:1px dotted var(--amber);
+  white-space:nowrap;
+}
+.api-key-alert a:hover{ opacity:0.85; }
 
 /* ---------- header ---------- */
 header{
@@ -47,7 +76,7 @@ header{
   align-items:center;
   justify-content:space-between;
   padding:0 32px;
-  border-bottom:1px solid var(--hairline);
+  height:84px;
   background:var(--panel);
 }
 .brand{
@@ -585,13 +614,25 @@ main{
 }
 .rotation-dots .dot.done .fill{ width:100%; background:var(--text-dim); }
 
-/* ---------- watchlist ---------- */
-.watchlist{
+/* ---------- side rail: positions + watchlist ---------- */
+.side-rail{
   background:var(--panel);
   display:flex;
   flex-direction:column;
   overflow:hidden;
+  min-height:0;
 }
+.positions{
+  display:none;
+  flex-direction:column;
+  flex:0 1 auto;
+  max-height:42%;
+  min-height:0;
+  border-bottom:1px solid var(--hairline);
+  overflow:hidden;
+}
+.positions.visible{ display:flex; }
+.positions-head,
 .watchlist-head{
   padding:18px 28px 12px;
   font-size:11px;
@@ -599,10 +640,23 @@ main{
   text-transform:uppercase;
   color:var(--text-dim);
   border-bottom:1px solid var(--hairline);
+  flex:0 0 auto;
 }
+.positions-head{
+  color:var(--amber);
+}
+.positions-rows,
 .watchlist-rows{
   overflow-y:auto;
   flex:1;
+  min-height:0;
+}
+.watchlist{
+  display:flex;
+  flex-direction:column;
+  flex:1;
+  min-height:0;
+  overflow:hidden;
 }
 .wl-row{
   display:grid;
@@ -649,6 +703,54 @@ main{
 }
 .wl-row .pos .pnl.up{ color:var(--up); }
 .wl-row .pos .pnl.down{ color:var(--down); }
+.pos-row{
+  display:grid;
+  grid-template-columns: 90px 1fr auto;
+  gap:8px;
+  align-items:start;
+  padding:14px 28px;
+  border-bottom:1px solid var(--hairline);
+}
+.pos-row .t{
+  font-weight:600;
+  font-size:16px;
+  letter-spacing:0.5px;
+}
+.pos-row .meta{
+  min-width:0;
+}
+.pos-row .n{
+  font-family:'Barlow Condensed', sans-serif;
+  font-size:15px;
+  color:var(--text-dim);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.pos-row .detail{
+  margin-top:4px;
+  font-size:11px;
+  color:var(--text-dim);
+}
+.pos-row .pnl-block{
+  text-align:right;
+  white-space:nowrap;
+}
+.pos-row .pnl-block .value{
+  font-size:15px;
+  font-weight:500;
+}
+.pos-row .pnl-block .pct{
+  margin-top:3px;
+  font-size:12px;
+}
+.pos-row .pnl-block.up .value,
+.pos-row .pnl-block.up .pct{ color:var(--up); }
+.pos-row .pnl-block.down .value,
+.pos-row .pnl-block.down .pct{ color:var(--down); }
+.pos-row.active-row{
+  background:var(--panel-raised);
+}
 .wl-row .p{
   text-align:right;
   font-size:15px;
@@ -682,6 +784,9 @@ main{
   overflow:hidden;
   position:relative;
   gap:0;
+  height:56px;
+  min-height:56px;
+  max-height:56px;
 }
 .crawl-label{
   flex:0 0 auto;
@@ -760,7 +865,8 @@ main{
 /* small-screen fallback (not the primary target, but keeps it usable) */
 @media (max-width:900px){
   main{ grid-template-columns: 1fr; grid-template-rows: auto auto; }
-  .watchlist-rows{ max-height:40vh; }
+  .positions{ max-height:30vh; }
+  .watchlist-rows{ max-height:35vh; }
   .side-drawer{ width:85vw; }
 }
 </style>
@@ -769,23 +875,30 @@ main{
 
 <div class="board">
 
-  <header>
-    <div class="brand">
-      <div class="brand-mark">MARKET<span>BOARD</span></div>
-      <div class="brand-sub">Conference Room Feed</div>
+  <div class="board-top">
+    <div class="api-key-alert" id="apiKeyAlert" role="alert">
+      <span>No API key added yet. Add at least one provider key to load live prices, charts, and news.</span>
+      <a href="api-keys.html">Add an API key →</a>
     </div>
-    <div class="header-right">
-      <div class="market-status">
-        <div class="status-dot" id="statusDot"></div>
-        <span id="statusText">Market Open</span>
+
+    <header>
+      <div class="brand">
+        <div class="brand-mark">MARKET<span>BOARD</span></div>
+        <div class="brand-sub">Conference Room Feed</div>
       </div>
-      <div class="clock">
-        <div id="clockTime">--:--:--</div>
-        <div class="date" id="clockDate">--</div>
+      <div class="header-right">
+        <div class="market-status">
+          <div class="status-dot" id="statusDot"></div>
+          <span id="statusText">Market Open</span>
+        </div>
+        <div class="clock">
+          <div id="clockTime">--:--:--</div>
+          <div class="date" id="clockDate">--</div>
+        </div>
+        <button class="menu-btn" id="menuBtn" title="Menu">&#9776;</button>
       </div>
-      <button class="menu-btn" id="menuBtn" title="Menu">&#9776;</button>
-    </div>
-  </header>
+    </header>
+  </div>
 
   <main>
     <section class="spotlight">
@@ -818,10 +931,16 @@ main{
       <div class="rotation-dots" id="rotationDots"></div>
     </section>
 
-    <section class="watchlist">
-      <div class="watchlist-head">Watchlist</div>
-      <div class="watchlist-rows" id="watchlistRows"></div>
-    </section>
+    <aside class="side-rail">
+      <section class="positions" id="positionsPanel">
+        <div class="positions-head">Positions</div>
+        <div class="positions-rows" id="positionsRows"></div>
+      </section>
+      <section class="watchlist">
+        <div class="watchlist-head">Watchlist</div>
+        <div class="watchlist-rows" id="watchlistRows"></div>
+      </section>
+    </aside>
   </main>
 
   <div class="crawl" id="headlineCrawl">
@@ -865,7 +984,7 @@ main{
       <input type="text" id="newName" class="name-input" placeholder="Company name" maxlength="30">
       <button id="addTickerBtn">Add</button>
     </div>
-    <div class="settings-hint">Check <b>Holding</b> for positions you own, then enter shares and cost per share. Live prices need a connected data API — otherwise a mock price is generated.</div>
+    <div class="settings-hint">Check <b>Holding</b> for positions you own, then enter shares and cost per share. Prices and news require at least one API key.</div>
 
     <button class="settings-close" id="closeSettingsBtn">Done</button>
   </div>
@@ -884,8 +1003,8 @@ const CONFIG = {
   // How long the spotlight lingers on each company, in ms.
   SPOTLIGHT_ROTATE_MS: 8000,
 
-  // How often prices refresh (mock: random walk tick; live: API poll), in ms.
-  PRICE_REFRESH_MS: 4000,
+  // How often prices refresh (API poll), in ms.
+  PRICE_REFRESH_MS: 60000,
 
   COMPANIES: [
     { ticker: "ASTS", name: "AST SpaceMobile" },
@@ -895,9 +1014,8 @@ const CONFIG = {
   ],
 };
 
-// Pull provider/key/mock settings from shared storage (see providers.js).
+// Pull provider settings from shared storage (see providers.js).
 CONFIG.PROVIDER = loadActiveProvider();
-CONFIG.USE_MOCK_DATA = loadUseMock();
 CONFIG.API_KEY = (loadSavedApiKeys()[CONFIG.PROVIDER]) || "";
 
 const WATCHLIST_STORAGE_KEY = "marketboard_watchlist";
@@ -956,7 +1074,7 @@ function saveWatchlist(){
 const CHART_CALENDAR_DAYS = 365;
 const CHART_POINTS = 100;
 
-// Fallback blurbs used only in demo mode or when no live article is available.
+// Fallback blurbs used only when no live article is available.
 const MOCK_HEADLINES = {
   ASTS: "Satellite network progress remains a key focus for investors",
   JMIA: "African e-commerce trends watched as marketplace metrics update",
@@ -976,13 +1094,22 @@ let dotFillTimer = null;
 
 /* ================================================================
    DATA LAYER
-   Mock mode: random-walk simulation, kept in memory per ticker.
-   Live mode: real quotes + 1Y history only — never mix in fake charts.
+   Live quotes + history/news via saved provider keys.
    ================================================================ */
 
 function usingLiveData(){
-  // Live as long as demo mode is off and at least one provider key is saved.
-  return !CONFIG.USE_MOCK_DATA && hasAnySavedApiKey();
+  return hasAnySavedApiKey();
+}
+
+function updateApiKeyAlert(){
+  const el = document.getElementById("apiKeyAlert");
+  if (!el) return;
+  const needsKey = !hasAnySavedApiKey();
+  el.classList.toggle("visible", needsKey);
+  if (needsKey && !sessionStorage.getItem("marketboard_api_key_alerted")){
+    sessionStorage.setItem("marketboard_api_key_alerted", "1");
+    alert("Add an API key to load live prices and news.\n\nOpen API Key Management from the menu, or use the banner at the top of the board.");
+  }
 }
 
 function isValidPrice(n){
@@ -1006,24 +1133,10 @@ function downsample(values, maxPoints){
   return out;
 }
 
-function buildMockHistory(endPrice, points){
-  const history = [];
-  let p = endPrice;
-  // Walk backward with modest daily-ish moves so we never invent a $0 print.
-  for (let i = points - 1; i >= 0; i--){
-    history[i] = p;
-    const step = (Math.random() - 0.48) * (endPrice * 0.02);
-    p = Math.max(endPrice * 0.25, p - step);
-  }
-  history[points - 1] = endPrice;
-  return history;
-}
-
 function chartHistory(stock){
   if (!stock) return [];
 
-  // Live mode before 1Y history arrives: show only the day move, never a
-  // random year path that later snaps to the real price (that caused the cliff).
+  // Before 1Y history arrives: show only the day move.
   if (usingLiveData() && !stock.historyFetched){
     if (isValidPrice(stock.price) && isValidPrice(stock.prevClose)){
       return [stock.prevClose, stock.price];
@@ -1043,19 +1156,7 @@ function chartHistory(stock){
   return series;
 }
 
-function seedMockStock(){
-  const base = 50 + Math.random() * 400;
-  const history = buildMockHistory(base, CHART_POINTS);
-  return {
-    price: base,
-    prevClose: history[history.length - 2] || base,
-    history,
-    historyFetched: true, // mock history is intentional, not a pending live fetch
-    historyIsYear: true,
-  };
-}
-
-function seedLiveStock(){
+function seedStock(){
   return {
     price: null,
     prevClose: null,
@@ -1063,21 +1164,6 @@ function seedLiveStock(){
     historyFetched: false,
     historyIsYear: false,
   };
-}
-
-function seedStock(){
-  return usingLiveData() ? seedLiveStock() : seedMockStock();
-}
-
-function stepMockStock(stock){
-  const drift = (Math.random() - 0.5) * (stock.price * 0.006);
-  const nextPrice = Math.max(stock.price * 0.5, stock.price + drift);
-  stock.prevClose = stock.price;
-  stock.price = nextPrice;
-  stock.history = sanitizeHistory(stock.history);
-  stock.history.push(nextPrice);
-  if (stock.history.length > CHART_POINTS) stock.history.shift();
-  return stock;
 }
 
 function historyLooksUsable(data){
@@ -1164,11 +1250,11 @@ async function ensureYearHistory(ticker){
 
 // Prefer the active provider, then fall back across any other saved keys.
 async function fetchQuote(ticker){
+  const stock = stocks[ticker];
   if (!usingLiveData()){
-    return stepMockStock(stocks[ticker]);
+    return stock;
   }
 
-  const stock = stocks[ticker];
   const keys = loadSavedApiKeys();
 
   for (const providerId of orderedProviderIds()){
@@ -1244,7 +1330,7 @@ function articlesForTicker(ticker){
   return [{
     title: fallback,
     url: null,
-    source: usingLiveData() ? "No live article" : "Demo",
+    source: "No live article",
   }];
 }
 
@@ -1369,7 +1455,7 @@ function renderSpotlight(){
   const chartLabel = document.getElementById("chartLabel");
   if (chartLabel){
     if (!usingLiveData()){
-      chartLabel.textContent = "1Y performance (demo)";
+      chartLabel.textContent = "Add an API key";
     } else if (stock.historyIsYear){
       const via = stock.historyProvider && PROVIDERS[stock.historyProvider]
         ? PROVIDERS[stock.historyProvider].label
@@ -1478,49 +1564,89 @@ function rotateSpotlight(){
    RENDER: watchlist
    ================================================================ */
 
+function renderPositions(){
+  const panel = document.getElementById("positionsPanel");
+  const container = document.getElementById("positionsRows");
+  if (!panel || !container) return;
+
+  const held = CONFIG.COMPANIES
+    .map((c, i) => ({ company: c, index: i }))
+    .filter(({ company }) => isHeldPosition(company));
+
+  panel.classList.toggle("visible", held.length > 0);
+  if (!held.length){
+    container.innerHTML = "";
+    return;
+  }
+
+  container.innerHTML = held.map(({ company: c, index: i }) => {
+    const stock = stocks[c.ticker] || {};
+    const ready = isValidPrice(stock.price);
+    const pos = ready ? positionMetrics(c, stock.price) : null;
+
+    if (!pos){
+      return `
+        <div class="pos-row ${i === spotlightIndex ? "active-row" : ""}" data-i="${i}">
+          <div class="t">${escapeHtml(c.ticker)}</div>
+          <div class="meta">
+            <div class="n">${escapeHtml(c.name)}</div>
+            <div class="detail">Add shares &amp; cost basis in Edit Watchlist</div>
+          </div>
+          <div class="pnl-block">
+            <div class="value">${ready ? "$" + stock.price.toFixed(2) : "—"}</div>
+          </div>
+        </div>`;
+    }
+
+    const up = pos.pnl >= 0;
+    return `
+      <div class="pos-row ${i === spotlightIndex ? "active-row" : ""}" data-i="${i}">
+        <div class="t">${escapeHtml(c.ticker)}</div>
+        <div class="meta">
+          <div class="n">${escapeHtml(c.name)}</div>
+          <div class="detail">${pos.shares} sh @ $${pos.cost.toFixed(2)} · now $${stock.price.toFixed(2)}</div>
+        </div>
+        <div class="pnl-block ${up ? "up" : "down"}">
+          <div class="value">${up ? "+" : ""}$${pos.pnl.toFixed(2)}</div>
+          <div class="pct">${up ? "+" : ""}${pos.pnlPct.toFixed(2)}%</div>
+        </div>
+      </div>`;
+  }).join("");
+}
+
 function renderWatchlist(){
+  renderPositions();
   const container = document.getElementById("watchlistRows");
   container.innerHTML = CONFIG.COMPANIES.map((c, i) => {
     const stock = stocks[c.ticker];
     const held = isHeldPosition(c);
     const ready = isValidPrice(stock.price) && isValidPrice(stock.prevClose);
-    const pos = ready ? positionMetrics(c, stock.price) : null;
     const holdBadge = held ? `<span class="hold-badge">HOLD</span>` : "";
-    const posLine = pos
-      ? `<div class="pos">${pos.shares} sh @ $${pos.cost.toFixed(2)}
-          <span class="pnl ${pos.pnl >= 0 ? "up" : "down"}">
-            ${pos.pnl >= 0 ? "+" : ""}$${Math.abs(pos.pnl).toFixed(2)}
-            (${pos.pnl >= 0 ? "+" : ""}${pos.pnlPct.toFixed(2)}%)
-          </span>
-        </div>`
-      : (held ? `<div class="pos">Add shares &amp; cost basis in Edit Watchlist</div>` : "");
 
     if (!ready){
       return `
-        <div class="wl-row ${held ? "has-position" : ""} ${i === spotlightIndex ? "active-row" : ""}" data-i="${i}">
+        <div class="wl-row ${i === spotlightIndex ? "active-row" : ""}" data-i="${i}">
           <div class="t">${c.ticker}</div>
           <div class="n">${escapeHtml(c.name)}${holdBadge}</div>
           <div class="p">—</div>
           <div class="c">…</div>
-          ${posLine}
         </div>`;
     }
     const change = stock.price - stock.prevClose;
     const pct = (change / stock.prevClose) * 100;
     const up = change >= 0;
     return `
-      <div class="wl-row ${held ? "has-position" : ""} ${i === spotlightIndex ? "active-row" : ""}" data-i="${i}">
+      <div class="wl-row ${i === spotlightIndex ? "active-row" : ""}" data-i="${i}">
         <div class="t">${c.ticker}</div>
         <div class="n">${escapeHtml(c.name)}${holdBadge}</div>
         <div class="p">$${stock.price.toFixed(2)}</div>
         <div class="c ${up ? "up" : "down"}">${up ? "+" : ""}${pct.toFixed(2)}%</div>
-        ${posLine}
       </div>`;
   }).join("");
 }
 
 function highlightActiveWatchlistRow(){
-  document.querySelectorAll(".wl-row").forEach(row => {
+  document.querySelectorAll(".wl-row, .pos-row").forEach(row => {
     row.classList.toggle("active-row", Number(row.dataset.i) === spotlightIndex);
   });
 }
@@ -1835,6 +1961,7 @@ function closeDrawer(){
 
 function boot(){
   initStocks();
+  updateApiKeyAlert();
   renderClock();
   renderSpotlight();
   renderRotationDots();

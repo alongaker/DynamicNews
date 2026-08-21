@@ -145,7 +145,6 @@ const PROVIDERS = {
    ---------------------------------------------------------------- */
 const APIKEYS_STORAGE_KEY = "marketboard_apikeys";
 const ACTIVE_PROVIDER_STORAGE_KEY = "marketboard_active_provider";
-const USE_MOCK_STORAGE_KEY = "marketboard_use_mock";
 
 function loadSavedApiKeys(){
   try{
@@ -167,16 +166,6 @@ function loadActiveProvider(){
 
 function saveActiveProvider(id){
   localStorage.setItem(ACTIVE_PROVIDER_STORAGE_KEY, id);
-}
-
-function loadUseMock(){
-  const saved = localStorage.getItem(USE_MOCK_STORAGE_KEY);
-  if (saved === null) return true; // default to demo data until a key is set active
-  return saved === "true";
-}
-
-function saveUseMock(val){
-  localStorage.setItem(USE_MOCK_STORAGE_KEY, val ? "true" : "false");
 }
 
 /* ----------------------------------------------------------------

@@ -295,17 +295,6 @@ header{
     the board automatically tries your other saved keys. Keys stay in this browser only.
   </div>
 
-  <div class="mock-banner">
-    <div class="mb-text">
-      <div class="mb-title">Use demo data</div>
-      <div class="mb-sub">Board runs on simulated prices, no key required. Turn this off once a provider below is active.</div>
-    </div>
-    <label class="toggle">
-      <input type="checkbox" id="mockToggle">
-      <span class="toggle-track"></span>
-    </label>
-  </div>
-
   <div class="section-label">Providers</div>
   <div class="provider-list" id="providerList"></div>
 
@@ -324,13 +313,10 @@ header{
 function render(){
   const activeProvider = loadActiveProvider();
   const savedKeys = loadSavedApiKeys();
-  const useMock = loadUseMock();
-
-  document.getElementById("mockToggle").checked = useMock;
 
   const list = document.getElementById("providerList");
   list.innerHTML = Object.entries(PROVIDERS).map(([id, p]) => {
-    const isActive = id === activeProvider && !useMock;
+    const isActive = id === activeProvider;
     const hasSaved = !!savedKeys[id];
     return `
       <div class="provider-card ${isActive ? "is-active" : ""}" data-id="${id}">
@@ -386,6 +372,15 @@ function saveKey(id){
   }
   saveApiKeys(keys);
 
+  if (key){
+    const saved = loadSavedApiKeys();
+    const active = loadActiveProvider();
+    // Activate this provider if it's the only key or the current active one has no key.
+    if (!saved[active] || Object.keys(saved).length === 1){
+      saveActiveProvider(id);
+    }
+  }
+
   const status = document.getElementById(`status-${id}`);
   status.textContent = key ? "Saved." : "Key cleared.";
   status.classList.add("ok");
@@ -394,7 +389,6 @@ function saveKey(id){
 
 function setActive(id){
   saveActiveProvider(id);
-  saveUseMock(false); // picking a provider implies you want live data
   render();
 }
 
@@ -403,17 +397,13 @@ function removeKey(id){
   delete keys[id];
   saveApiKeys(keys);
 
-  // if the removed key belonged to the active provider, fall back to demo data
+  // If the removed key was active, switch to another saved provider when possible.
   if (loadActiveProvider() === id){
-    saveUseMock(true);
+    const remaining = orderedProviderIds();
+    if (remaining.length) saveActiveProvider(remaining[0]);
   }
   render();
 }
-
-document.getElementById("mockToggle").addEventListener("change", (e) => {
-  saveUseMock(e.target.checked);
-  render();
-});
 
 render();
 </script>
