@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>API Key Management — Market Board</title>
+<title>API Key Management</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -40,24 +40,13 @@ header{
   border-bottom:1px solid var(--hairline);
   background:var(--panel);
 }
-.brand{
-  display:flex;
-  align-items:baseline;
-  gap:12px;
-}
-.brand-mark{
+.page-heading{
   font-family:'Barlow Condensed', sans-serif;
   font-weight:700;
-  font-size:28px;
-  letter-spacing:0.5px;
+  font-size:32px;
+  letter-spacing:0.3px;
   color:var(--text);
-}
-.brand-mark span{ color:var(--amber); }
-.brand-sub{
-  font-size:11px;
-  letter-spacing:2px;
-  color:var(--text-dim);
-  text-transform:uppercase;
+  line-height:1;
 }
 .back-link{
   display:flex;
@@ -280,15 +269,11 @@ header{
 <body>
 
 <header>
-  <div class="brand">
-    <div class="brand-mark">MARKET<span>BOARD</span></div>
-    <div class="brand-sub">API Key Management</div>
-  </div>
-  <a class="back-link" href="index.html">&larr; Back to board</a>
+  <h1 class="page-heading">API Key Management</h1>
+  <a class="back-link" href="index.html">&larr; Overview</a>
 </header>
 
 <div class="page">
-  <div class="page-title">API Key Management</div>
   <div class="page-sub">
     Connect one or more market-data providers. The <b>active</b> provider is tried first;
     if it can’t fulfill a request (for example Finnhub free tier blocking year charts),

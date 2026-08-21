@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Earnings — Market Board</title>
+<title>This Week's Earnings</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -52,24 +52,14 @@ header{
   gap:36px;
   min-width:0;
 }
-.brand{
-  display:flex;
-  align-items:baseline;
-  gap:12px;
-}
-.brand-mark{
+.page-heading{
   font-family:'Barlow Condensed', sans-serif;
   font-weight:700;
-  font-size:28px;
-  letter-spacing:0.5px;
+  font-size:32px;
+  letter-spacing:0.3px;
   color:var(--text);
-}
-.brand-mark span{ color:var(--amber); }
-.brand-sub{
-  font-size:11px;
-  letter-spacing:2px;
-  color:var(--text-dim);
-  text-transform:uppercase;
+  line-height:1;
+  white-space:nowrap;
 }
 .page-tabs{
   display:flex;
@@ -242,7 +232,6 @@ header{
 .page-sub{
   color:var(--text-dim);
   font-size:13px;
-  margin-top:6px;
   max-width:62ch;
   line-height:1.5;
 }
@@ -437,7 +426,8 @@ header{
   header{ padding:0 16px; }
   .header-left{ gap:16px; }
   .page-tabs{ display:none; }
-  .brand-sub, .clock, .market-status{ display:none; }
+  .clock, .market-status{ display:none; }
+  .page-heading{ font-size:24px; }
   .page{ padding:24px 16px 48px; }
   .page-head{ flex-direction:column; align-items:flex-start; }
   .page-meta{ text-align:left; }
@@ -454,12 +444,9 @@ header{
 <div class="shell">
   <header>
     <div class="header-left">
-      <div class="brand">
-        <div class="brand-mark">MARKET<span>BOARD</span></div>
-        <div class="brand-sub">Earnings Week</div>
-      </div>
+      <h1 class="page-heading">This Week's Earnings</h1>
       <nav class="page-tabs" aria-label="Board sections">
-        <a class="page-tab" href="index.html">Board</a>
+        <a class="page-tab" href="index.html">Overview</a>
         <a class="page-tab active" href="earnings.html" aria-current="page">Earnings</a>
       </nav>
     </div>
@@ -478,10 +465,7 @@ header{
 
   <div class="page">
     <div class="page-head">
-      <div>
-        <div class="page-title">Earnings this week</div>
-        <div class="page-sub" id="pageSub">Report dates from Finnhub — before open / after close, not webcast times.</div>
-      </div>
+      <div class="page-sub" id="pageSub">Report dates from Finnhub — before open / after close, not webcast times.</div>
       <div class="page-meta" id="pageMeta"></div>
     </div>
 
@@ -501,11 +485,11 @@ header{
     <button class="drawer-close" id="drawerCloseBtn">&times;</button>
   </div>
   <a class="drawer-item" href="index.html">
-    <span class="di-label">Board</span>
+    <span class="di-label">Overview</span>
     <span class="di-sub">Live prices, charts, and headlines</span>
   </a>
   <a class="drawer-item" href="earnings.html" aria-current="page">
-    <span class="di-label">Earnings Calendar</span>
+    <span class="di-label">This Week's Earnings</span>
     <span class="di-sub">This week’s reports, day by day</span>
   </a>
   <a class="drawer-item" href="api-keys.html">
